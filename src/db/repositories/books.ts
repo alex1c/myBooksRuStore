@@ -24,6 +24,7 @@ export interface BookRow {
 	language: string | null
 	page_count: number | null
 	cover_uri: string | null
+	remote_cover_url: string | null
 	source: string | null
 	source_external_id: string | null
 	created_at: string
@@ -44,6 +45,7 @@ export interface CreateBookInput {
 	language?: string | null
 	pageCount?: number | null
 	coverUri?: string | null
+	remoteCoverUrl?: string | null
 	source?: string | null
 	sourceExternalId?: string | null
 }
@@ -64,6 +66,7 @@ export function mapBook (row: BookRow): Book {
 		language: row.language,
 		pageCount: row.page_count,
 		coverUri: row.cover_uri,
+		remoteCoverUrl: row.remote_cover_url ?? null,
 		source: row.source,
 		sourceExternalId: row.source_external_id,
 		createdAt: row.created_at,
@@ -102,6 +105,9 @@ function prepareBookFields (input: CreateBookInput) {
 		language: input.language?.trim() ? input.language.trim() : null,
 		pageCount: input.pageCount ?? null,
 		coverUri: input.coverUri?.trim() ? input.coverUri.trim() : null,
+		remoteCoverUrl: input.remoteCoverUrl?.trim()
+			? input.remoteCoverUrl.trim()
+			: null,
 		source: input.source ?? null,
 		sourceExternalId: input.sourceExternalId ?? null,
 	}
@@ -123,9 +129,9 @@ export async function createBook (
 		`INSERT INTO books (
 			id, title, subtitle, author_text, description,
 			isbn10, isbn13, publisher, published_year, language,
-			page_count, cover_uri, source, source_external_id,
+			page_count, cover_uri, remote_cover_url, source, source_external_id,
 			created_at, updated_at, archived_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
 		[
 			id,
 			fields.title,
@@ -139,6 +145,7 @@ export async function createBook (
 			fields.language,
 			fields.pageCount,
 			fields.coverUri,
+			fields.remoteCoverUrl,
 			fields.source,
 			fields.sourceExternalId,
 			now,
@@ -182,6 +189,10 @@ export async function updateBook (
 		pageCount:
 			input.pageCount !== undefined ? input.pageCount : existing.pageCount,
 		coverUri: input.coverUri !== undefined ? input.coverUri : existing.coverUri,
+		remoteCoverUrl:
+			input.remoteCoverUrl !== undefined
+				? input.remoteCoverUrl
+				: existing.remoteCoverUrl,
 		source: input.source !== undefined ? input.source : existing.source,
 		sourceExternalId:
 			input.sourceExternalId !== undefined
@@ -196,8 +207,8 @@ export async function updateBook (
 		`UPDATE books SET
 			title = ?, subtitle = ?, author_text = ?, description = ?,
 			isbn10 = ?, isbn13 = ?, publisher = ?, published_year = ?,
-			language = ?, page_count = ?, cover_uri = ?, source = ?,
-			source_external_id = ?, updated_at = ?
+			language = ?, page_count = ?, cover_uri = ?, remote_cover_url = ?,
+			source = ?, source_external_id = ?, updated_at = ?
 		 WHERE id = ?`,
 		[
 			fields.title,
@@ -211,6 +222,7 @@ export async function updateBook (
 			fields.language,
 			fields.pageCount,
 			fields.coverUri,
+			fields.remoteCoverUrl,
 			fields.source,
 			fields.sourceExternalId,
 			now,

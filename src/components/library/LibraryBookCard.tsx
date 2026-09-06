@@ -29,7 +29,7 @@ export function LibraryBookCard ({ item, onPress }: LibraryBookCardProps) {
 			onPress={onPress}
 			style={({ pressed }) => [styles.card, pressed && styles.pressed]}
 		>
-			<CoverThumbnail title={book.title} coverUri={book.coverUri} size={52} />
+			<CoverThumbnail title={book.title} coverUri={book.coverUri} remoteCoverUrl={book.remoteCoverUrl} size={52} />
 			<View style={styles.body}>
 				<Text style={styles.title} numberOfLines={2}>
 					{book.title}

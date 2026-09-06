@@ -78,7 +78,6 @@ export interface DuplicateCheckResult {
 
 type JoinedRow = BookRow &
 	LibraryEntryRow & {
-		// book id overlaps with entry id naming — use aliases in SQL
 		book_id_pk: string
 		entry_id: string
 		book_created_at: string
@@ -87,6 +86,7 @@ type JoinedRow = BookRow &
 		entry_created_at: string
 		entry_updated_at: string
 		entry_archived_at: string | null
+		remote_cover_url?: string | null
 	}
 
 function mapJoined (row: JoinedRow, shelfIds: string[]): LibraryBookItem {
@@ -103,6 +103,7 @@ function mapJoined (row: JoinedRow, shelfIds: string[]): LibraryBookItem {
 		language: row.language,
 		page_count: row.page_count,
 		cover_uri: row.cover_uri,
+		remote_cover_url: row.remote_cover_url ?? null,
 		source: row.source,
 		source_external_id: row.source_external_id,
 		created_at: row.book_created_at,
@@ -148,6 +149,7 @@ const JOIN_SELECT = `
 		b.language,
 		b.page_count,
 		b.cover_uri,
+		b.remote_cover_url,
 		b.source,
 		b.source_external_id,
 		b.created_at AS book_created_at,
@@ -404,6 +406,80 @@ export async function addBookToLibrary (
 		return { book, entry, shelfIds }
 	})
 }
+
+export interface ExternalBookDraft {
+	title: string
+	subtitle?: string | null
+	authorText?: string | null
+	description?: string | null
+	isbn10?: string | null
+	isbn13?: string | null
+	publisher?: string | null
+	publishedYear?: number | null
+	language?: string | null
+	pageCount?: number | null
+	coverUrl?: string | null
+	source: string
+	sourceExternalId: string
+	status?: LibraryStatus
+	format?: BookFormat
+	progressMode?: ProgressMode
+}
+
+/**
+ * Add a catalogue candidate as a normal local book.
+ * Local UUID is always the PK; sourceExternalId is metadata only.
+ * Cover download is best-effort and never blocks persistence.
+ */
+export async function addExternalBookToLibrary (
+	db: SqlExecutor,
+	draft: ExternalBookDraft,
+): Promise<LibraryBookItem> {
+	const remoteCover = draft.coverUrl?.trim() || null
+	const created = await addBookToLibrary(db, {
+		book: {
+			title: draft.title,
+			authorText: draft.authorText ?? '',
+			subtitle: draft.subtitle ?? null,
+			description: draft.description ?? null,
+			isbn10: draft.isbn10 ?? null,
+			isbn13: draft.isbn13 ?? null,
+			publisher: draft.publisher ?? null,
+			publishedYear: draft.publishedYear ?? null,
+			language: draft.language ?? null,
+			pageCount: draft.pageCount ?? null,
+			coverUri: remoteCover,
+			remoteCoverUrl: remoteCover,
+			source: draft.source,
+			sourceExternalId: draft.sourceExternalId,
+		},
+		entry: {
+			status: draft.status ?? 'WANT_TO_READ',
+			format: draft.format ?? 'PAPER',
+			progressMode: draft.progressMode ?? 'PAGES',
+			totalPages: draft.pageCount ?? null,
+		},
+	})
+
+	if (remoteCover) {
+		try {
+			const { cacheCoverImage } = await import('@/services/covers/coverCache')
+			const localUri = await cacheCoverImage(remoteCover, created.book.id)
+			if (localUri) {
+				await updateBook(db, created.book.id, { coverUri: localUri })
+				const refreshed = await getLibraryBookByEntryId(db, created.entry.id)
+				if (refreshed) {
+					return refreshed
+				}
+			}
+		} catch {
+			// Cover cache failures must not undo a successful add.
+		}
+	}
+
+	return created
+}
+
 
 /**
  * Atomically update book metadata, library entry, and shelf links.

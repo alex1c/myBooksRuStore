@@ -55,6 +55,53 @@ export const libraryCopy = {
 	countsFinished: 'Прочитано',
 } as const
 
+export const searchCopy = {
+	hubTitle: 'Добавить книгу',
+	hubSearchTitle: 'Найти книгу',
+	hubSearchHint: 'Быстрый поиск по каталогу — название, автор или ISBN',
+	hubManualTitle: 'Добавить вручную',
+	hubManualHint: 'Работает без интернета',
+	hubScanTitle: 'Сканировать штрихкод',
+	hubScanHint: 'ISBN с обложки книги',
+	title: 'Поиск книг',
+	placeholder: 'Название, автор или ISBN',
+	initialTitle: 'Найдите книгу по названию, автору или ISBN.',
+	initialHint: 'Можно также отсканировать штрихкод или добавить книгу вручную.',
+	loading: 'Ищем книги…',
+	emptyTitle: 'Ничего не нашли',
+	emptyHint: 'Попробуйте изменить запрос или добавьте книгу вручную.',
+	changeQuery: 'Изменить запрос',
+	manualAdd: 'Добавить вручную',
+	networkErrorTitle: 'Не удалось выполнить поиск',
+	networkErrorHint: 'Проверьте подключение к интернету.',
+	retry: 'Повторить',
+	add: 'Добавить',
+	searchAction: 'Найти',
+	previewTitle: 'Добавить в библиотеку',
+	previewEdit: 'Изменить данные',
+	previewSubmit: 'Добавить в библиотеку',
+	addedToast: 'Книга добавлена в библиотеку',
+	duplicateTitle: 'Эта книга уже есть в библиотеке',
+	duplicateOpen: 'Открыть',
+	duplicateAddEdition: 'Добавить другое издание',
+	attribution: 'Метаданные: Open Library',
+} as const
+
+export const scanCopy = {
+	title: 'Сканер ISBN',
+	permissionExplain:
+		'Камера нужна только для сканирования штрихкода книги.',
+	permissionAllow: 'Разрешить камеру',
+	permissionDeniedTitle: 'Разрешение на камеру не предоставлено',
+	permissionDeniedHint: 'Можно ввести ISBN вручную или повторить запрос.',
+	tryAgain: 'Попробовать снова',
+	enterIsbn: 'Ввести ISBN вручную',
+	lookingUp: 'Ищем книгу по ISBN…',
+	notBookland: 'Этот штрихкод не похож на ISBN книги.',
+	notFound: 'Книга с таким ISBN не найдена',
+	manualFallback: 'Добавить вручную',
+} as const
+
 export const addBookCopy = {
 	title: 'Добавить книгу',
 	editTitle: 'Изменить книгу',

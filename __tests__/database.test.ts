@@ -48,9 +48,9 @@ describe('database foundation', () => {
 		const db = createTestSqlExecutor()
 		const version = await applyMigrations(db)
 
-		expect(version).toBe(2)
+		expect(version).toBe(3)
 		expect(version).toBe(getLatestSchemaVersion())
-		expect(await getSchemaVersion(db)).toBe(2)
+		expect(await getSchemaVersion(db)).toBe(3)
 
 		for (const table of EXPECTED_TABLES) {
 			const row = await db.getFirstAsync(
@@ -82,8 +82,8 @@ describe('database foundation', () => {
 			) VALUES ('lib-1', 'book-1', 'READING', 'PAPER', 'PAGES', 'a', 'a')`,
 		)
 
-		expect(await applyMigrations(db)).toBe(2)
-		expect(await applyMigrations(db)).toBe(2)
+		expect(await applyMigrations(db)).toBe(3)
+		expect(await applyMigrations(db)).toBe(3)
 
 		const book = await db.getFirstAsync<{ title: string }>(
 			`SELECT title FROM books WHERE id = 'book-1'`,
@@ -99,7 +99,7 @@ describe('database foundation', () => {
 
 	it('does not corrupt the database when initialization is repeated', async () => {
 		const db = createTestSqlExecutor()
-		expect(await applyMigrations(db)).toBe(2)
+		expect(await applyMigrations(db)).toBe(3)
 		await ensureAppSettings(db)
 
 		const book = await createBook(db, {
@@ -107,11 +107,11 @@ describe('database foundation', () => {
 			authorText: 'М. Булгаков',
 		})
 
-		expect(await applyMigrations(db)).toBe(2)
-		expect(await applyMigrations(db)).toBe(2)
+		expect(await applyMigrations(db)).toBe(3)
+		expect(await applyMigrations(db)).toBe(3)
 		await ensureAppSettings(db)
 
-		expect(await getSchemaVersion(db)).toBe(2)
+		expect(await getSchemaVersion(db)).toBe(3)
 		expect(await countBooks(db)).toBe(1)
 		expect(await getBookById(db, book.id)).toMatchObject({
 			title: 'Мастер и Маргарита',
@@ -123,10 +123,11 @@ describe('database foundation', () => {
 		expect(settings.reminderEnabled).toBe(false)
 	})
 
-	it('registers Phase 1 and Phase 2 migrations', () => {
-		expect(migrations).toHaveLength(2)
+	it('registers Phase 1–3 migrations', () => {
+		expect(migrations).toHaveLength(3)
 		expect(migrations[0]?.version).toBe(1)
 		expect(migrations[1]?.version).toBe(2)
+		expect(migrations[2]?.version).toBe(3)
 	})
 })
 

@@ -120,6 +120,9 @@ Screens must not embed raw SQL.
 **Schema v2:** `library_entries.finished_date_precision` (`EXACT` | `YEAR` |
 `UNKNOWN`), `finished_year`, `finished_on` (YYYY-MM-DD for exact dates)
 
+**Schema v3:** `books.remote_cover_url` (original catalogue cover URL;
+`cover_uri` may point to a locally cached file)
+
 ### Statuses
 
 `WANT_TO_READ` · `READING` · `FINISHED` · `PAUSED` · `ABANDONED`
@@ -152,7 +155,7 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 2 — Library** (complete). Phase 3 (book search / ISBN) is next.
+**Phase 3 — Book search / ISBN** (complete). Phase 4 (reading tracker) is next.
 
-Manual local library: add / edit / search / filter / sort / archive / restore /
-shelves. Offline only — no external catalogue yet.
+Manual library + Open Library search/ISBN scan. Offline core remains fully usable
+when the network is unavailable.

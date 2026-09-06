@@ -29,6 +29,8 @@ export interface Book {
 	language: string | null
 	pageCount: number | null
 	coverUri: string | null
+	/** Original remote cover URL from a catalogue provider (optional). */
+	remoteCoverUrl: string | null
 	source: string | null
 	sourceExternalId: string | null
 	createdAt: string

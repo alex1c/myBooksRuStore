@@ -8,7 +8,8 @@ import {
 	type ParsedBookForm,
 } from '@/components/library/BookForm'
 import { Screen, SectionHeader } from '@/components/ui'
-import { addBookCopy } from '@/constants/copy'
+import { addBookCopy, searchCopy } from '@/constants/copy'
+import { spacing } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import {
 	addBookToLibrary,
@@ -16,12 +17,11 @@ import {
 	listShelves,
 } from '@/domain/libraryService'
 import type { Shelf } from '@/db/types'
-import { spacing } from '@/constants/theme'
 
 /**
- * Add-book screen — minimal required fields, optional details expandable.
+ * Manual add — fully offline, unchanged Phase 2 flow.
  */
-export default function AddBookScreen () {
+export default function ManualAddBookScreen () {
 	const { executor } = useDatabase()
 	const [shelves, setShelves] = useState<Shelf[]>([])
 
@@ -55,14 +55,20 @@ export default function AddBookScreen () {
 						? `${first.book.title}${first.book.authorText ? ` — ${first.book.authorText}` : ''}`
 						: undefined,
 					[
-						{ text: addBookCopy.duplicateAddAnyway, onPress: () => {
-							void persist(data, true)
-						} },
+						{
+							text: addBookCopy.duplicateAddAnyway,
+							onPress: () => {
+								void persist(data, true)
+							},
+						},
 						...(first
-							? [{
-								text: addBookCopy.duplicateOpen,
-								onPress: () => router.replace(`/books/${first.entry.id}`),
-							}]
+							? [
+								{
+									text: addBookCopy.duplicateOpen,
+									onPress: () =>
+										router.replace(`/books/${first.entry.id}`),
+								},
+							]
 							: []),
 						{ text: 'Отмена', style: 'cancel' as const },
 					],
@@ -82,7 +88,10 @@ export default function AddBookScreen () {
 
 	return (
 		<Screen scroll keyboardAvoiding contentStyle={styles.content}>
-			<SectionHeader title={addBookCopy.title} />
+			<SectionHeader
+				title={searchCopy.hubManualTitle}
+				subtitle={searchCopy.hubManualHint}
+			/>
 			<BookForm
 				initial={emptyBookFormValues()}
 				shelves={shelves}

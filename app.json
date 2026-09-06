@@ -29,6 +29,15 @@
       "expo-router",
       "expo-sqlite",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Камера нужна только для сканирования штрихкода книги.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#EEF3F0",

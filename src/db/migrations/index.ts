@@ -1,5 +1,6 @@
 import { migration001Initial } from './001_initial'
 import { migration002FinishedDatePrecision } from './002_finished_date_precision'
+import { migration003RemoteCoverUrl } from './003_remote_cover_url'
 
 export interface Migration {
 	version: number
@@ -21,6 +22,11 @@ export const migrations: Migration[] = [
 		version: 2,
 		name: '002_finished_date_precision',
 		sql: migration002FinishedDatePrecision,
+	},
+	{
+		version: 3,
+		name: '003_remote_cover_url',
+		sql: migration003RemoteCoverUrl,
 	},
 ]
 

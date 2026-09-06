@@ -120,6 +120,7 @@ export default function BookDetailsScreen () {
 					<CoverThumbnail
 						title={item.book.title}
 						coverUri={item.book.coverUri}
+						remoteCoverUrl={item.book.remoteCoverUrl}
 						size={88}
 					/>
 					<View style={styles.heroText}>
