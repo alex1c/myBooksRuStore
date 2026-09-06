@@ -1,11 +1,17 @@
 import { migration001Initial } from './001_initial'
 import { migration002FinishedDatePrecision } from './002_finished_date_precision'
 import { migration003RemoteCoverUrl } from './003_remote_cover_url'
+import { migration004ActiveSessionsAndProgressEvents } from './004_active_sessions_and_progress_events'
 
 export interface Migration {
 	version: number
 	name: string
 	sql: string
+	/**
+	 * When false, apply outside a transaction so connection-level PRAGMAs
+	 * (e.g. foreign_keys OFF for table rebuild) take effect.
+	 */
+	transactional?: boolean
 }
 
 /**
@@ -27,6 +33,12 @@ export const migrations: Migration[] = [
 		version: 3,
 		name: '003_remote_cover_url',
 		sql: migration003RemoteCoverUrl,
+	},
+	{
+		version: 4,
+		name: '004_active_sessions_and_progress_events',
+		sql: migration004ActiveSessionsAndProgressEvents,
+		transactional: false,
 	},
 ]
 

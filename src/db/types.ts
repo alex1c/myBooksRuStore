@@ -74,8 +74,10 @@ export interface ReadingSession {
 	id: string
 	libraryEntryId: string
 	startedAt: string
-	endedAt: string
-	durationSeconds: number
+	/** Null while the session is still active. */
+	endedAt: string | null
+	/** Null while active; set from endedAt - startedAt on finish. */
+	durationSeconds: number | null
 	startPage: number | null
 	endPage: number | null
 	startPercent: number | null
@@ -84,6 +86,28 @@ export interface ReadingSession {
 	endAudioSeconds: number | null
 	createdAt: string
 	updatedAt: string
+}
+
+/** Audit trail for progress changes (quick update, session end, finish). */
+export type ProgressEventType =
+	| 'QUICK_UPDATE'
+	| 'MANUAL_UPDATE'
+	| 'SESSION_END'
+	| 'FINISH_BOOK'
+	| 'UNDO'
+
+export interface ReadingProgressEvent {
+	id: string
+	libraryEntryId: string
+	readingSessionId: string | null
+	type: ProgressEventType
+	previousPage: number | null
+	newPage: number | null
+	previousPercent: number | null
+	newPercent: number | null
+	previousAudioSeconds: number | null
+	newAudioSeconds: number | null
+	createdAt: string
 }
 
 export interface ReadingNote {

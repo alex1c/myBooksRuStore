@@ -22,6 +22,10 @@ export default function BooksLayout () {
 			<Stack.Screen name="scan" options={{ title: 'Сканер ISBN' }} />
 			<Stack.Screen name="[id]/index" options={{ title: 'Книга' }} />
 			<Stack.Screen name="[id]/edit" options={{ title: 'Изменить книгу' }} />
+			<Stack.Screen
+				name="[id]/history"
+				options={{ title: 'История чтения' }}
+			/>
 		</Stack>
 	)
 }

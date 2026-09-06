@@ -123,6 +123,10 @@ Screens must not embed raw SQL.
 **Schema v3:** `books.remote_cover_url` (original catalogue cover URL;
 `cover_uri` may point to a locally cached file)
 
+**Schema v4:** active reading sessions (`ended_at` / `duration_seconds`
+nullable), partial unique index for one active session,
+`reading_progress_events` audit trail
+
 ### Statuses
 
 `WANT_TO_READ` · `READING` · `FINISHED` · `PAUSED` · `ABANDONED`
@@ -155,7 +159,7 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 3 — Book search / ISBN** (complete). Phase 4 (reading tracker) is next.
+**Phase 4 — Reading tracker** (complete). Phase 5 (diary / quotes / thoughts) is next.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
 when the network is unavailable.

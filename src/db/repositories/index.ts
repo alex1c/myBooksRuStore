@@ -30,9 +30,21 @@ export {
 
 export {
 	createReadingSession,
+	startActiveSession,
 	getReadingSessionById,
+	getActiveSession,
+	finishActiveSession,
+	cancelActiveSession,
+	deleteReadingSession,
+	listSessionsForEntry,
 	countSessionsForEntry,
 } from './readingSessions'
+
+export {
+	createProgressEvent,
+	getProgressEventById,
+	listProgressEventsForEntry,
+} from './readingProgressEvents'
 
 export {
 	createReadingNote,

@@ -56,7 +56,7 @@ export function formatProgressLabel (entry: LibraryEntry): string | null {
 			return `${current} / ${total} стр. · ${percent}%`
 		}
 		if (current != null) {
-			return `${current} стр.`
+			return `стр. ${current}`
 		}
 		if (total != null) {
 			return `из ${total} стр.`
@@ -88,6 +88,37 @@ export function formatProgressLabel (entry: LibraryEntry): string | null {
 		}
 	}
 
+	return null
+}
+
+/** 0–100 progress bar ratio when calculable; otherwise null. */
+export function progressRatio (entry: LibraryEntry): number | null {
+	if (entry.progressMode === 'PAGES') {
+		if (
+			entry.currentPage != null &&
+			entry.totalPages != null &&
+			entry.totalPages > 0
+		) {
+			return Math.min(1, Math.max(0, entry.currentPage / entry.totalPages))
+		}
+		return null
+	}
+	if (entry.progressMode === 'PERCENT') {
+		if (entry.currentPercent == null) {
+			return null
+		}
+		return Math.min(1, Math.max(0, entry.currentPercent / 100))
+	}
+	if (
+		entry.audioPositionSeconds != null &&
+		entry.audioDurationSeconds != null &&
+		entry.audioDurationSeconds > 0
+	) {
+		return Math.min(
+			1,
+			Math.max(0, entry.audioPositionSeconds / entry.audioDurationSeconds),
+		)
+	}
 	return null
 }
 

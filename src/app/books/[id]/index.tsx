@@ -3,6 +3,9 @@ import { useCallback, useState } from 'react'
 import { Alert, StyleSheet, Text, View } from 'react-native'
 
 import { CoverThumbnail } from '@/components/library/CoverThumbnail'
+import { ExactProgressModal } from '@/components/reading/ExactProgressModal'
+import { QuickProgressRow } from '@/components/reading/ReadingNowCard'
+import { UndoSnackbar } from '@/components/reading/UndoSnackbar'
 import {
 	Card,
 	LoadingState,
@@ -10,7 +13,7 @@ import {
 	Screen,
 	SecondaryButton,
 } from '@/components/ui'
-import { appCopy, bookDetailsCopy } from '@/constants/copy'
+import { appCopy, bookDetailsCopy, sessionCopy, todayCopy } from '@/constants/copy'
 import {
 	formatLabels,
 	statusLabels,
@@ -22,18 +25,38 @@ import {
 	getLibraryBookByEntryId,
 	listShelves,
 } from '@/domain/libraryService'
-import type { LibraryBookItem, Shelf } from '@/db/types'
-import { formatProgressLabel } from '@/utils/progress'
+import {
+	ActiveSessionConflictError,
+	applyQuickProgress,
+	continueReadingBook,
+	formatSessionHistoryLine,
+	isCompletionReached,
+	listBookSessions,
+	markBookFinished,
+	reopenFinishedBook,
+	startReadingSession,
+	undoProgressEvent,
+	type QuickDelta,
+} from '@/domain/readingTrackerService'
+import type { LibraryBookItem, ReadingSession, Shelf } from '@/db/types'
+import { formatProgressLabel, progressRatio } from '@/utils/progress'
 
 /**
- * Book details — catalog + personal library state + archive action.
+ * Book details — progress actions, sessions history, finish / continue.
  */
 export default function BookDetailsScreen () {
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { executor } = useDatabase()
 	const [item, setItem] = useState<LibraryBookItem | null>(null)
 	const [shelves, setShelves] = useState<Shelf[]>([])
+	const [sessions, setSessions] = useState<ReadingSession[]>([])
 	const [loading, setLoading] = useState(true)
+	const [busy, setBusy] = useState(false)
+	const [exactOpen, setExactOpen] = useState(false)
+	const [exactError, setExactError] = useState<string | null>(null)
+	const [snack, setSnack] = useState<{ message: string; eventId: string } | null>(
+		null,
+	)
 
 	const load = useCallback(async () => {
 		if (!id) {
@@ -41,12 +64,14 @@ export default function BookDetailsScreen () {
 		}
 		setLoading(true)
 		try {
-			const [next, shelfRows] = await Promise.all([
+			const [next, shelfRows, history] = await Promise.all([
 				getLibraryBookByEntryId(executor, id),
 				listShelves(executor),
+				listBookSessions(executor, id),
 			])
 			setItem(next)
 			setShelves(shelfRows)
+			setSessions(history.filter((s) => s.endedAt != null).slice(0, 5))
 		} finally {
 			setLoading(false)
 		}
@@ -57,6 +82,26 @@ export default function BookDetailsScreen () {
 			void load()
 		}, [load]),
 	)
+
+	const offerCompletion = (next: LibraryBookItem) => {
+		if (!isCompletionReached(next.entry) || next.entry.status === 'FINISHED') {
+			return
+		}
+		Alert.alert(sessionCopy.completionTitle, sessionCopy.completionMessage, [
+			{ text: sessionCopy.completionLater, style: 'cancel' },
+			{
+				text: sessionCopy.completionDone,
+				onPress: () => {
+					void (async () => {
+						await markBookFinished(executor, next.entry.id, {
+							applySuggestedProgress: true,
+						})
+						await load()
+					})()
+				},
+			},
+		])
+	}
 
 	const handleArchive = () => {
 		if (!item) {
@@ -77,6 +122,137 @@ export default function BookDetailsScreen () {
 		])
 	}
 
+	const handleQuick = async (
+		kind: 'pages' | 'percent' | 'minutes',
+		delta: number,
+	) => {
+		if (!item) {
+			return
+		}
+		setBusy(true)
+		try {
+			const payload: QuickDelta =
+				kind === 'pages'
+					? { kind: 'pages', delta }
+					: kind === 'percent'
+						? { kind: 'percent', delta }
+						: { kind: 'minutes', delta }
+			const result = await applyQuickProgress(executor, item.entry.id, payload)
+			setItem(result.item)
+			setSnack({
+				message: `${todayCopy.progressUpdated} · ${result.feedbackLabel}`,
+				eventId: result.event.id,
+			})
+			offerCompletion(result.item)
+		} catch (error) {
+			Alert.alert(
+				'Ошибка',
+				error instanceof Error
+					? error.message.replace(/^INVALID_PROGRESS:/, '')
+					: 'Ошибка',
+			)
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	const handleExact = async (value: {
+		kind: 'setPages' | 'setPercent' | 'setAudioSeconds'
+		page?: number
+		percent?: number
+		seconds?: number
+	}) => {
+		if (!item) {
+			return
+		}
+		setExactError(null)
+		setBusy(true)
+		try {
+			let delta: QuickDelta
+			if (value.kind === 'setPages') {
+				delta = { kind: 'setPages', page: value.page ?? 0 }
+			} else if (value.kind === 'setPercent') {
+				delta = { kind: 'setPercent', percent: value.percent ?? 0 }
+			} else {
+				delta = { kind: 'setAudioSeconds', seconds: value.seconds ?? 0 }
+			}
+			const result = await applyQuickProgress(executor, item.entry.id, delta)
+			setExactOpen(false)
+			setItem(result.item)
+			setSnack({
+				message: `${todayCopy.progressUpdated} · ${result.feedbackLabel}`,
+				eventId: result.event.id,
+			})
+			offerCompletion(result.item)
+		} catch (error) {
+			const code = error instanceof Error ? error.message : ''
+			setExactError(code.replace(/^INVALID_PROGRESS:/, '') || 'Ошибка')
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	const handleStart = async () => {
+		if (!item) {
+			return
+		}
+		setBusy(true)
+		try {
+			await startReadingSession(executor, item.entry.id)
+			router.push('/sessions/active')
+		} catch (error) {
+			if (error instanceof ActiveSessionConflictError) {
+				const title = error.bookTitle ?? 'книга'
+				Alert.alert(
+					sessionCopy.conflictTitle,
+					sessionCopy.conflictMessage(title),
+					[
+						{
+							text: sessionCopy.returnToSession,
+							onPress: () => router.push('/sessions/active'),
+						},
+						{
+							text: sessionCopy.finishExisting,
+							onPress: () =>
+								router.push({
+									pathname: '/sessions/finish',
+									params: { sessionId: error.activeSession.id },
+								}),
+						},
+						{ text: 'Закрыть', style: 'cancel' },
+					],
+				)
+				return
+			}
+			Alert.alert(
+				'Ошибка',
+				error instanceof Error ? error.message : 'Ошибка',
+			)
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	const handleMarkFinished = () => {
+		if (!item) {
+			return
+		}
+		Alert.alert(sessionCopy.completionTitle, sessionCopy.completionMessage, [
+			{ text: appCopy.cancel, style: 'cancel' },
+			{
+				text: sessionCopy.completionDone,
+				onPress: () => {
+					void (async () => {
+						await markBookFinished(executor, item.entry.id, {
+							applySuggestedProgress: true,
+						})
+						await load()
+					})()
+				},
+			},
+		])
+	}
+
 	if (loading && !item) {
 		return <LoadingState />
 	}
@@ -91,6 +267,7 @@ export default function BookDetailsScreen () {
 
 	const author = item.book.authorText.trim() || appCopy.authorUnknown
 	const progress = formatProgressLabel(item.entry)
+	const ratio = progressRatio(item.entry)
 	const shelfNames = shelves
 		.filter((shelf) => item.shelfIds.includes(shelf.id))
 		.map((shelf) => shelf.name)
@@ -111,6 +288,12 @@ export default function BookDetailsScreen () {
 		}
 		return null
 	})()
+
+	const showTracker =
+		item.entry.status === 'READING' ||
+		item.entry.status === 'WANT_TO_READ' ||
+		item.entry.status === 'PAUSED' ||
+		item.entry.status === 'ABANDONED'
 
 	return (
 		<>
@@ -140,6 +323,16 @@ export default function BookDetailsScreen () {
 					<Text style={styles.body}>
 						{progress ?? bookDetailsCopy.noProgress}
 					</Text>
+					{ratio != null ? (
+						<View style={styles.barTrack}>
+							<View
+								style={[
+									styles.barFill,
+									{ width: `${Math.round(ratio * 100)}%` },
+								]}
+							/>
+						</View>
+					) : null}
 					{item.entry.rating != null ? (
 						<Text style={styles.body}>★ {item.entry.rating}</Text>
 					) : (
@@ -148,9 +341,83 @@ export default function BookDetailsScreen () {
 					{finishedLabel ? (
 						<Text style={styles.body}>Прочитано: {finishedLabel}</Text>
 					) : null}
-					{item.entry.reviewText ? (
-						<Text style={styles.review}>{item.entry.reviewText}</Text>
+
+					{showTracker &&
+					(item.entry.status === 'READING' ||
+						item.entry.status === 'WANT_TO_READ') ? (
+						<QuickProgressRow
+							entry={item.entry}
+							busy={busy}
+							onQuick={(kind, delta) => void handleQuick(kind, delta)}
+							onExact={() => {
+								setExactError(null)
+								setExactOpen(true)
+							}}
+							onStartReading={() => void handleStart()}
+						/>
 					) : null}
+
+					{item.entry.status === 'PAUSED' ? (
+						<PrimaryButton
+							label={sessionCopy.continueReading}
+							onPress={() => {
+								void (async () => {
+									await continueReadingBook(executor, item.entry.id)
+									await load()
+								})()
+							}}
+						/>
+					) : null}
+
+					{item.entry.status === 'ABANDONED' ? (
+						<PrimaryButton
+							label={sessionCopy.returnToBook}
+							onPress={() => {
+								void (async () => {
+									await continueReadingBook(executor, item.entry.id)
+									await load()
+								})()
+							}}
+						/>
+					) : null}
+
+					{item.entry.status === 'FINISHED' ? (
+						<SecondaryButton
+							label={sessionCopy.reopenReading}
+							onPress={() => {
+								void (async () => {
+									await reopenFinishedBook(executor, item.entry.id)
+									await load()
+								})()
+							}}
+						/>
+					) : null}
+
+					{item.entry.status !== 'FINISHED' ? (
+						<SecondaryButton
+							label={sessionCopy.markFinished}
+							onPress={handleMarkFinished}
+						/>
+					) : null}
+				</Card>
+
+				<Card style={styles.card}>
+					<Text style={styles.section}>{bookDetailsCopy.history}</Text>
+					{sessions.length === 0 ? (
+						<Text style={styles.muted}>{sessionCopy.historyEmpty}</Text>
+					) : (
+						sessions.map((session) => (
+							<Text key={session.id} style={styles.historyLine}>
+								{formatSessionHistoryLine(session, item.entry.progressMode)}
+							</Text>
+						))
+					)}
+					<SecondaryButton
+						label={sessionCopy.historyAll}
+						onPress={() =>
+							router.push(`/books/${item.entry.id}/history`)
+						}
+					/>
 				</Card>
 
 				{(item.book.isbn13 ||
@@ -195,6 +462,41 @@ export default function BookDetailsScreen () {
 				/>
 				<SecondaryButton label={appCopy.archive} onPress={handleArchive} />
 			</Screen>
+
+			{exactOpen ? (
+				<ExactProgressModal
+					key={`${item.entry.id}-${item.entry.updatedAt}-exact`}
+					visible
+					entry={item.entry}
+					error={exactError}
+					onClose={() => setExactOpen(false)}
+					onSubmit={(value) => void handleExact(value)}
+				/>
+			) : null}
+
+			{snack ? (
+				<View style={styles.snackWrap}>
+					<UndoSnackbar
+						message={snack.message}
+						actionLabel={todayCopy.undo}
+						onDismiss={() => setSnack(null)}
+						onAction={() => {
+							void (async () => {
+								try {
+									const result = await undoProgressEvent(
+										executor,
+										snack.eventId,
+									)
+									setItem(result.item)
+									setSnack(null)
+								} catch {
+									setSnack(null)
+								}
+							})()
+						}}
+					/>
+				</View>
+			) : null}
 		</>
 	)
 }
@@ -247,10 +549,27 @@ const styles = StyleSheet.create({
 		...typography.bodySmall,
 		color: colors.muted,
 	},
-	review: {
-		...typography.body,
-		color: colors.textSecondary,
-		marginTop: spacing.xs,
+	historyLine: {
+		...typography.bodySmall,
+		color: colors.text,
+		paddingVertical: 2,
+	},
+	barTrack: {
+		height: 6,
+		borderRadius: 999,
+		backgroundColor: colors.surfaceMuted,
+		overflow: 'hidden',
+		marginVertical: spacing.xxs,
+	},
+	barFill: {
+		height: '100%',
+		backgroundColor: colors.primary,
+	},
+	snackWrap: {
+		position: 'absolute',
+		left: spacing.md,
+		right: spacing.md,
+		bottom: spacing.lg,
 	},
 	missing: {
 		...typography.body,

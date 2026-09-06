@@ -29,7 +29,12 @@ export async function applyMigrations (db: SqlExecutor): Promise<number> {
 			)
 		}
 
-		if (db.withTransactionAsync) {
+		// Some migrations (table rebuilds) must toggle connection-level PRAGMAs
+		// and therefore cannot run inside BEGIN…COMMIT.
+		const useTransaction =
+			migration.transactional !== false && Boolean(db.withTransactionAsync)
+
+		if (useTransaction && db.withTransactionAsync) {
 			await db.withTransactionAsync(apply)
 		} else {
 			await apply()

@@ -37,6 +37,68 @@ export const todayCopy = {
 	chooseFromLibrary: 'Выбрать из библиотеки',
 	addBook: 'Добавить книгу',
 	readingSection: 'Читаю сейчас',
+	startReading: 'Начать чтение',
+	continueSession: 'Продолжить чтение',
+	activeSessionBanner: 'Незавершённая сессия',
+	setExact: 'Указать',
+	progressUpdated: 'Прогресс обновлён',
+	undo: 'Отменить',
+	plus1: '+1',
+	plus10: '+10',
+	plus25: '+25',
+	plus1pct: '+1%',
+	plus5pct: '+5%',
+	plus10pct: '+10%',
+	plus10min: '+10 мин',
+	plus30min: '+30 мин',
+	plus60min: '+60 мин',
+} as const
+
+export const sessionCopy = {
+	title: 'Читаем',
+	finish: 'Завершить',
+	cancelSession: 'Отменить сессию',
+	cancelConfirmTitle: 'Отменить сессию?',
+	cancelConfirmMessage:
+		'Сессия будет удалена. Прогресс книги не изменится.',
+	cancelConfirmAction: 'Удалить сессию',
+	startedFromPages: (page: number) => `Начали со стр. ${page}`,
+	startedFromPercent: (percent: number) =>
+		`Начали с ${Math.round(percent)}%`,
+	startedFromTime: (label: string) => `Начали с ${label}`,
+	longSessionWarning:
+		'Сессия длится уже более 12 ч. Проверьте, не забыли ли вы её завершить.',
+	conflictTitle: 'Уже идёт чтение',
+	conflictMessage: (title: string) =>
+		`У вас уже идёт чтение «${title}».`,
+	returnToSession: 'Вернуться к сессии',
+	finishExisting: 'Завершить её',
+	finishTitle: 'Итог сессии',
+	save: 'Сохранить',
+	discard: 'Не сохранять',
+	was: 'Было',
+	now: 'Сейчас',
+	durationLabel: (label: string) => `${label} чтения`,
+	historyTitle: 'История чтения',
+	historyEmpty: 'Сессий пока нет',
+	historyAll: 'Вся история',
+	deleteSession: 'Удалить запись',
+	deleteSessionHint:
+		'Удалит только запись сессии. Текущий прогресс книги не пересчитается.',
+	completionTitle: 'Книга закончена',
+	completionMessage: 'Отметить как прочитанную?',
+	completionLater: 'Позже',
+	completionDone: 'Прочитано',
+	rateOptional: 'Оценить книгу',
+	markFinished: 'Отметить прочитанной',
+	continueReading: 'Продолжить чтение',
+	returnToBook: 'Вернуться к книге',
+	reopenReading: 'Читать снова',
+	exactTitle: 'Указать прогресс',
+	pageLabel: 'Текущая страница',
+	percentLabel: 'Процент',
+	hoursLabel: 'Часы',
+	minutesLabel: 'Минуты',
 } as const
 
 export const libraryCopy = {
@@ -158,6 +220,7 @@ export const bookDetailsCopy = {
 	finished: 'Прочитано',
 	noProgress: 'Прогресс не указан',
 	noRating: 'Без оценки',
+	history: 'История чтения',
 } as const
 
 export const archiveCopy = {
