@@ -27,6 +27,31 @@ function cleanText (value: unknown): string | null {
 	return trimmed.length > 0 ? trimmed : null
 }
 
+function containsCyrillic (value: string): boolean {
+	return /[А-Яа-яЁё]/.test(value)
+}
+
+function titleMatchScore (title: string, query: string | undefined): number {
+	if (!query) {
+		return 0
+	}
+	const normalizedTitle = title.toLocaleLowerCase('ru-RU').trim()
+	const normalizedQuery = query.toLocaleLowerCase('ru-RU').trim()
+	if (!normalizedQuery) {
+		return 0
+	}
+	if (normalizedTitle === normalizedQuery) {
+		return 24
+	}
+	if (normalizedTitle.startsWith(normalizedQuery)) {
+		return 12
+	}
+	if (normalizedTitle.includes(normalizedQuery)) {
+		return 6
+	}
+	return 0
+}
+
 function joinAuthors (authors: unknown): string {
 	if (!Array.isArray(authors)) {
 		return ''
@@ -77,8 +102,9 @@ export function computeQualityScore (input: {
 	publishedYear: number | null
 	language: string | null
 	preferRussian?: boolean
+	query?: string
 }): number {
-	let score = 0
+	let score = titleMatchScore(input.title, input.query)
 	if (input.title) score += 10
 	if (input.authorText) score += 8
 	if (input.isbn13 || input.isbn10) score += 6
@@ -87,12 +113,13 @@ export function computeQualityScore (input: {
 	if (input.publisher) score += 2
 	if (input.publishedYear != null) score += 1
 	if (input.preferRussian && input.language === 'rus') score += 4
+	if (input.preferRussian && containsCyrillic(input.title)) score += 6
 	return score
 }
 
 export function normalizeOpenLibraryDoc (
 	doc: RawSearchDoc,
-	options: { preferRussian?: boolean } = {},
+	options: { preferRussian?: boolean; query?: string } = {},
 ): NormalizedBookCandidate | null {
 	const title = cleanText(doc.title)
 	if (!title) {
@@ -140,6 +167,7 @@ export function normalizeOpenLibraryDoc (
 		publishedYear,
 		language,
 		preferRussian: options.preferRussian,
+		query: options.query,
 	})
 
 	return {

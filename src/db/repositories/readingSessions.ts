@@ -60,6 +60,13 @@ export async function createReadingSession (
 	if (input.durationSeconds < 0) {
 		throw new Error('INVALID_DURATION')
 	}
+	const entry = await db.getFirstAsync<{ id: string }>(
+		`SELECT id FROM library_entries WHERE id = ? LIMIT 1`,
+		[input.libraryEntryId],
+	)
+	if (!entry) {
+		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
+	}
 
 	const id = createId('session')
 	const now = nowIso()

@@ -457,5 +457,14 @@ export async function deleteLibraryEntryHard (
 	db: SqlExecutor,
 	id: string,
 ): Promise<void> {
+	const reference = await db.getFirstAsync<{ id: string }>(
+		`SELECT id FROM reading_sessions WHERE library_entry_id = ?
+		 UNION ALL
+		 SELECT id FROM reading_notes WHERE library_entry_id = ? LIMIT 1`,
+		[id, id],
+	)
+	if (reference) {
+		throw new Error('LIBRARY_ENTRY_HAS_HISTORY')
+	}
 	await db.runAsync(`DELETE FROM library_entries WHERE id = ?`, [id])
 }

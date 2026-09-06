@@ -118,6 +118,25 @@ describe('normalization', () => {
 		expect(item?.coverUrl).toContain('covers.openlibrary.org')
 	})
 
+	it('prioritizes an exact Cyrillic title over a richer foreign edition', () => {
+		const russian = normalizeOpenLibraryDoc({
+			title: 'Преступление и наказание',
+			author_name: ['Фёдор Достоевский'],
+			language: ['rus'],
+		}, { preferRussian: true, query: 'Преступление и наказание' })
+		const foreign = normalizeOpenLibraryDoc({
+			title: 'Schuld und Sühne',
+			author_name: ['Fyodor Dostoevsky'],
+			isbn: ['9780140449136'],
+			cover_i: 123,
+			number_of_pages_median: 671,
+			publisher: ['Penguin'],
+			language: ['ger'],
+		}, { preferRussian: true, query: 'Преступление и наказание' })
+
+		expect(russian?.qualityScore).toBeGreaterThan(foreign?.qualityScore ?? 0)
+	})
+
 	it('handles missing author/cover/pages and malformed input', () => {
 		expect(normalizeOpenLibraryDoc({ title: '   ' })).toBeNull()
 		const item = normalizeOpenLibraryDoc({

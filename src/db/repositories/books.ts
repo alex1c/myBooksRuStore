@@ -277,6 +277,13 @@ export async function deleteBookHard (
 	db: SqlExecutor,
 	id: string,
 ): Promise<void> {
+	const reference = await db.getFirstAsync<{ id: string }>(
+		`SELECT id FROM library_entries WHERE book_id = ? LIMIT 1`,
+		[id],
+	)
+	if (reference) {
+		throw new Error('BOOK_HAS_LIBRARY_ENTRIES')
+	}
 	await db.runAsync(`DELETE FROM books WHERE id = ?`, [id])
 }
 

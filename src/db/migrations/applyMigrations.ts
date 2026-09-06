@@ -34,6 +34,12 @@ export async function applyMigrations (db: SqlExecutor): Promise<number> {
 		} else {
 			await apply()
 		}
+
+		// PRAGMA foreign_keys is a connection setting and SQLite ignores attempts
+		// to change it while a transaction is active. Re-assert it after the
+		// migration transaction so every executor (including test adapters) has
+		// enforcement enabled before repositories start writing data.
+		await db.execAsync('PRAGMA foreign_keys = ON;')
 	}
 
 	return getSchemaVersion(db)

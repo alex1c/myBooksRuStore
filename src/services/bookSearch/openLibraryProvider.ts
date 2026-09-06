@@ -67,7 +67,10 @@ export function createOpenLibraryProvider (): BookSearchProvider {
 			})
 
 			const normalized = (data.docs ?? [])
-				.map((doc) => normalizeOpenLibraryDoc(doc, { preferRussian }))
+				.map((doc) => normalizeOpenLibraryDoc(doc, {
+					preferRussian,
+					query,
+				}))
 				.filter((item): item is NormalizedBookCandidate => item != null)
 
 			// Soft preference: for Cyrillic queries, boost Russian-language docs

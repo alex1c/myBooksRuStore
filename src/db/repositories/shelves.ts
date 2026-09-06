@@ -135,6 +135,13 @@ export async function setEntryShelves (
 	)
 	const now = nowIso()
 	for (const shelfId of shelfIds) {
+		const shelf = await db.getFirstAsync<{ id: string }>(
+			`SELECT id FROM shelves WHERE id = ? LIMIT 1`,
+			[shelfId],
+		)
+		if (!shelf) {
+			throw new Error('SHELF_NOT_FOUND')
+		}
 		await db.runAsync(
 			`INSERT INTO library_entry_shelves
 				(library_entry_id, shelf_id, created_at)
