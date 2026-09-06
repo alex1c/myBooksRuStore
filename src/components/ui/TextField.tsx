@@ -9,7 +9,7 @@ import {
 import { colors, radii, spacing, typography } from '@/constants/theme'
 
 interface TextFieldProps extends TextInputProps {
-	label: string
+	label?: string
 	error?: string
 }
 
@@ -24,9 +24,9 @@ export function TextField ({
 }: TextFieldProps) {
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.label}>{label}</Text>
+			{label ? <Text style={styles.label}>{label}</Text> : null}
 			<TextInput
-				accessibilityLabel={label}
+				accessibilityLabel={label || rest.placeholder || 'Поле ввода'}
 				placeholderTextColor={colors.muted}
 				style={[styles.input, error ? styles.inputError : null, style]}
 				{...rest}

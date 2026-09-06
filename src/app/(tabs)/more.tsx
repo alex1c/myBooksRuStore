@@ -7,7 +7,7 @@ import { appCopy, moreCopy } from '@/constants/copy'
 import { colors, radii, spacing } from '@/constants/theme'
 
 /**
- * More / settings-style hub. Backup and reminders are stubs only.
+ * More / settings hub — archive and shelves are real; backup/reminders stubbed.
  */
 export default function MoreScreen () {
 	const handleComingSoon = (subtitle: string) => {
@@ -19,6 +19,25 @@ export default function MoreScreen () {
 			<SectionHeader title={moreCopy.title} subtitle={moreCopy.subtitle} />
 			<Card style={styles.card}>
 				<ListRow
+					title={moreCopy.shelves}
+					subtitle={moreCopy.shelvesHint}
+					showChevron
+					left={
+						<Ionicons name="bookmarks-outline" size={22} color={colors.primary} />
+					}
+					onPress={() => router.push('/shelves')}
+					style={styles.firstRow}
+				/>
+				<ListRow
+					title={moreCopy.archive}
+					subtitle={moreCopy.archiveHint}
+					showChevron
+					left={
+						<Ionicons name="archive-outline" size={22} color={colors.primary} />
+					}
+					onPress={() => router.push('/archive')}
+				/>
+				<ListRow
 					title={moreCopy.backup}
 					subtitle={moreCopy.backupHint}
 					showChevron
@@ -26,7 +45,6 @@ export default function MoreScreen () {
 						<Ionicons name="cloud-upload-outline" size={22} color={colors.primary} />
 					}
 					onPress={() => handleComingSoon(moreCopy.backupHint)}
-					style={styles.firstRow}
 				/>
 				<ListRow
 					title={moreCopy.reminders}

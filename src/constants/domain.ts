@@ -37,6 +37,21 @@ export const THEME_PREFERENCES = ['system', 'light', 'dark'] as const
 
 export type ThemePreference = (typeof THEME_PREFERENCES)[number]
 
+/** How precisely the user knows when they finished a book. */
+export const FINISHED_DATE_PRECISIONS = ['EXACT', 'YEAR', 'UNKNOWN'] as const
+
+export type FinishedDatePrecision = (typeof FINISHED_DATE_PRECISIONS)[number]
+
+export const LIBRARY_SORTS = [
+	'RECENTLY_ADDED',
+	'TITLE',
+	'AUTHOR',
+	'RECENTLY_UPDATED',
+	'FINISHED_DATE',
+] as const
+
+export type LibrarySort = (typeof LIBRARY_SORTS)[number]
+
 /**
  * Type guard helpers used by repositories and tests.
  */
@@ -66,4 +81,30 @@ export function isGoalPeriod (value: string): value is GoalPeriod {
 
 export function isThemePreference (value: string): value is ThemePreference {
 	return (THEME_PREFERENCES as readonly string[]).includes(value)
+}
+
+export function isFinishedDatePrecision (
+	value: string,
+): value is FinishedDatePrecision {
+	return (FINISHED_DATE_PRECISIONS as readonly string[]).includes(value)
+}
+
+export function isLibrarySort (value: string): value is LibrarySort {
+	return (LIBRARY_SORTS as readonly string[]).includes(value)
+}
+
+/**
+ * Suggest a default progress mode for a book format.
+ * Format and progressMode stay independently editable.
+ */
+export function defaultProgressModeForFormat (format: BookFormat): ProgressMode {
+	switch (format) {
+		case 'EBOOK':
+			return 'PERCENT'
+		case 'AUDIOBOOK':
+			return 'TIME'
+		case 'PAPER':
+		default:
+			return 'PAGES'
+	}
 }

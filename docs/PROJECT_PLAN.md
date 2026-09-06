@@ -2,15 +2,16 @@
 
 ## Current phase
 
-**Phase 1 — Foundation** ← current
+**Phase 2 — Library** ← DONE  
+**Phase 3 — Book search / ISBN** ← NEXT
 
 ## Phases
 
 | # | Phase | Status |
 | --- | --- | --- |
-| 1 | Foundation | **Current** |
-| 2 | Library | Planned |
-| 3 | Book search / ISBN | Planned |
+| 1 | Foundation | **DONE** |
+| 2 | Library | **DONE** |
+| 3 | Book search / ISBN | **NEXT** |
 | 4 | Reading tracker | Planned |
 | 5 | Diary / quotes / thoughts | Planned |
 | 6 | Calendar / streak / goals | Planned |
@@ -25,7 +26,7 @@
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 1 scope
+## Phase 1 scope (DONE)
 
 - Expo SDK 57 + RN 0.86 + React 19 + TypeScript strict
 - Expo Router bottom tabs (5 destinations)
@@ -34,21 +35,29 @@
 - Domain model for books, library entries, sessions, notes, shelves, goals
 - Centralized settings store (`app_meta`)
 - Repository layer + bootstrap with recoverable error UI
-- Meaningful Jest coverage for migrations / FKs / archive behavior
-- README + this plan
 
-## Explicitly deferred (do not start until requested)
+## Phase 2 scope (DONE)
 
-- External book catalogues / Google Books / Open Library
-- ISBN scanner
-- Full library CRUD UI
-- Reading timer
-- Streak / calendar / goals UI
-- Statistics charts
-- Backup / restore / PDF / CSV
-- OCR
-- Notifications
-- AppMetrica / Yandex Ads
+- Manual add / edit / details for local library
+- Search, status filters, sorting
+- Progress modes: PAGES / PERCENT / TIME
+- Statuses, formats, optional rating (0–5 / 0.5) and review
+- Finished-date precision: EXACT / YEAR / UNKNOWN (schema v2)
+- Soft archive + restore
+- User shelves (create / rename / archive / attach)
+- Today tab shows real READING books
+- Duplicate detection (title+author / ISBN)
+- Transactional add/update across books + entries + shelves
+
+## Explicitly deferred
+
+- External catalogues / Google Books / Open Library / ISBN scanner (Phase 3)
+- Reading timer / sessions UI (Phase 4)
+- Quotes / diary UI (Phase 5)
+- Streak / calendar / goals UI (Phase 6)
+- Statistics charts (Phase 7)
+- Backup / restore / PDF / CSV / OCR
+- Notifications / AppMetrica / Yandex Ads
 - Auth / cloud / social / AI
 - Production keystore
 
@@ -58,3 +67,4 @@
 - Everyday actions in 2–3 taps
 - Local user data is the source of truth
 - Soft-archive over destructive deletes for reading history
+- Book catalog ≠ library entry user state

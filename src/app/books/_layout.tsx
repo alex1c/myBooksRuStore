@@ -1,0 +1,23 @@
+import { Stack } from 'expo-router'
+
+import { colors } from '@/constants/theme'
+
+/**
+ * Stack for book add / details / edit flows.
+ */
+export default function BooksLayout () {
+	return (
+		<Stack
+			screenOptions={{
+				headerTintColor: colors.primary,
+				headerStyle: { backgroundColor: colors.background },
+				headerShadowVisible: false,
+				contentStyle: { backgroundColor: colors.background },
+			}}
+		>
+			<Stack.Screen name="add" options={{ title: 'Добавить книгу' }} />
+			<Stack.Screen name="[id]/index" options={{ title: 'Книга' }} />
+			<Stack.Screen name="[id]/edit" options={{ title: 'Изменить книгу' }} />
+		</Stack>
+	)
+}

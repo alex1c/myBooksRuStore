@@ -17,7 +17,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 })
 
 /**
- * Root layout: bootstrap SQLite, then mount tab navigation.
+ * Root layout: bootstrap SQLite, then mount tab navigation + library stacks.
  */
 export default function RootLayout () {
 	const { status, database, retry } = useAppBootstrap()
@@ -60,16 +60,33 @@ export default function RootLayout () {
 						screenOptions={{
 							headerShown: false,
 							contentStyle: { backgroundColor: colors.background },
+							headerTintColor: colors.primary,
+							headerStyle: { backgroundColor: colors.background },
+							headerShadowVisible: false,
 						}}
 					>
 						<Stack.Screen name="(tabs)" />
+						<Stack.Screen name="books" />
+						<Stack.Screen
+							name="archive"
+							options={{
+								headerShown: true,
+								title: 'Архив книг',
+							}}
+						/>
+						<Stack.Screen
+							name="shelves/index"
+							options={{
+								headerShown: true,
+								title: 'Полки',
+							}}
+						/>
 						<Stack.Screen
 							name="about"
 							options={{
 								presentation: 'modal',
 								headerShown: true,
 								title: 'О приложении',
-								headerTintColor: colors.primary,
 							}}
 						/>
 					</Stack>

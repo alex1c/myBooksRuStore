@@ -117,6 +117,9 @@ Screens must not embed raw SQL.
 `reading_notes`, `shelves`, `library_entry_shelves`, `reading_goals`,
 `app_meta`, `schema_migrations`
 
+**Schema v2:** `library_entries.finished_date_precision` (`EXACT` | `YEAR` |
+`UNKNOWN`), `finished_year`, `finished_on` (YYYY-MM-DD for exact dates)
+
 ### Statuses
 
 `WANT_TO_READ` · `READING` · `FINISHED` · `PAUSED` · `ABANDONED`
@@ -149,7 +152,7 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 1 — Foundation** (see `docs/PROJECT_PLAN.md`).
+**Phase 2 — Library** (complete). Phase 3 (book search / ISBN) is next.
 
-Library CRUD, reading timer, stats, backup, OCR, ads, and AppMetrica are
-intentionally out of scope for Phase 1.
+Manual local library: add / edit / search / filter / sort / archive / restore /
+shelves. Offline only — no external catalogue yet.

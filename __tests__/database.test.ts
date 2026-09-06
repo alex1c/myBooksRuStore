@@ -6,20 +6,21 @@ import {
 import { migrations } from '@/db/migrations'
 import {
 	archiveLibraryEntry,
-	createBook,
-	createLibraryEntry,
-	createReadingNote,
-	createReadingSession,
 	countActiveLibraryEntries,
 	countBooks,
 	countNotesForEntry,
 	countSessionsForEntry,
+	createBook,
+	createLibraryEntry,
+	createReadingNote,
+	createReadingSession,
 	deleteBookHard,
 	deleteLibraryEntryHard,
 	ensureAppSettings,
 	getAppSettings,
 	getBookById,
 	getLibraryEntryById,
+	restoreLibraryEntry,
 } from '@/db/repositories'
 import {
 	isBookFormat,
@@ -43,13 +44,13 @@ const EXPECTED_TABLES = [
 ] as const
 
 describe('database foundation', () => {
-	it('migrates an empty database to schema v1', async () => {
+	it('migrates an empty database to the latest schema version', async () => {
 		const db = createTestSqlExecutor()
 		const version = await applyMigrations(db)
 
-		expect(version).toBe(1)
+		expect(version).toBe(2)
 		expect(version).toBe(getLatestSchemaVersion())
-		expect(await getSchemaVersion(db)).toBe(1)
+		expect(await getSchemaVersion(db)).toBe(2)
 
 		for (const table of EXPECTED_TABLES) {
 			const row = await db.getFirstAsync(
@@ -60,9 +61,45 @@ describe('database foundation', () => {
 		}
 	})
 
+	it('upgrades a real v1 database to v2 without data loss', async () => {
+		const db = createTestSqlExecutor()
+		for (const migration of migrations.slice(0, 1)) {
+			await db.execAsync(migration.sql)
+			await db.runAsync(
+				'INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)',
+				[migration.version, '2026-09-06T00:00:00.000Z'],
+			)
+		}
+
+		await db.runAsync(
+			`INSERT INTO books (
+				id, title, author_text, created_at, updated_at
+			) VALUES ('book-1', 'Legacy', 'Author', 'a', 'a')`,
+		)
+		await db.runAsync(
+			`INSERT INTO library_entries (
+				id, book_id, status, format, progress_mode, created_at, updated_at
+			) VALUES ('lib-1', 'book-1', 'READING', 'PAPER', 'PAGES', 'a', 'a')`,
+		)
+
+		expect(await applyMigrations(db)).toBe(2)
+		expect(await applyMigrations(db)).toBe(2)
+
+		const book = await db.getFirstAsync<{ title: string }>(
+			`SELECT title FROM books WHERE id = 'book-1'`,
+		)
+		expect(book).toEqual({ title: 'Legacy' })
+
+		const precisionCol = await db.getFirstAsync(
+			`SELECT finished_date_precision, finished_year, finished_on
+			 FROM library_entries WHERE id = 'lib-1'`,
+		)
+		expect(precisionCol).not.toBeNull()
+	})
+
 	it('does not corrupt the database when initialization is repeated', async () => {
 		const db = createTestSqlExecutor()
-		expect(await applyMigrations(db)).toBe(1)
+		expect(await applyMigrations(db)).toBe(2)
 		await ensureAppSettings(db)
 
 		const book = await createBook(db, {
@@ -70,11 +107,11 @@ describe('database foundation', () => {
 			authorText: 'М. Булгаков',
 		})
 
-		expect(await applyMigrations(db)).toBe(1)
-		expect(await applyMigrations(db)).toBe(1)
+		expect(await applyMigrations(db)).toBe(2)
+		expect(await applyMigrations(db)).toBe(2)
 		await ensureAppSettings(db)
 
-		expect(await getSchemaVersion(db)).toBe(1)
+		expect(await getSchemaVersion(db)).toBe(2)
 		expect(await countBooks(db)).toBe(1)
 		expect(await getBookById(db, book.id)).toMatchObject({
 			title: 'Мастер и Маргарита',
@@ -86,10 +123,10 @@ describe('database foundation', () => {
 		expect(settings.reminderEnabled).toBe(false)
 	})
 
-	it('registers exactly one Phase 1 migration', () => {
-		expect(migrations).toHaveLength(1)
+	it('registers Phase 1 and Phase 2 migrations', () => {
+		expect(migrations).toHaveLength(2)
 		expect(migrations[0]?.version).toBe(1)
-		expect(migrations[0]?.name).toBe('001_initial')
+		expect(migrations[1]?.version).toBe(2)
 	})
 })
 
@@ -133,6 +170,13 @@ describe('repository and foreign-key behavior', () => {
 		expect(await getLibraryEntryById(db, entry.id)).not.toBeNull()
 	})
 
+	it('allows books without an author', async () => {
+		const db = createTestSqlExecutor()
+		await applyMigrations(db)
+		const book = await createBook(db, { title: 'Сборник', authorText: '' })
+		expect(book.authorText).toBe('')
+	})
+
 	it('rejects hard-delete of a book while library entries reference it', async () => {
 		const db = createTestSqlExecutor()
 		await applyMigrations(db)
@@ -147,7 +191,7 @@ describe('repository and foreign-key behavior', () => {
 		expect(await getBookById(db, book.id)).not.toBeNull()
 	})
 
-	it('preserves sessions and notes when a library entry is archived', async () => {
+	it('preserves sessions and notes when a library entry is archived and restored', async () => {
 		const db = createTestSqlExecutor()
 		await applyMigrations(db)
 
@@ -183,8 +227,11 @@ describe('repository and foreign-key behavior', () => {
 		expect(await countSessionsForEntry(db, entry.id)).toBe(1)
 		expect(await countNotesForEntry(db, entry.id)).toBe(1)
 
-		// Hard delete must fail while history rows still reference the entry.
 		await expect(deleteLibraryEntryHard(db, entry.id)).rejects.toThrow()
+
+		await restoreLibraryEntry(db, entry.id)
+		expect((await getLibraryEntryById(db, entry.id))?.archivedAt).toBeNull()
+		expect(await countActiveLibraryEntries(db)).toBe(1)
 	})
 
 	it('enforces foreign keys for library_entry_id on sessions', async () => {

@@ -1,4 +1,5 @@
 import { migration001Initial } from './001_initial'
+import { migration002FinishedDatePrecision } from './002_finished_date_precision'
 
 export interface Migration {
 	version: number
@@ -15,6 +16,11 @@ export const migrations: Migration[] = [
 		version: 1,
 		name: '001_initial',
 		sql: migration001Initial,
+	},
+	{
+		version: 2,
+		name: '002_finished_date_precision',
+		sql: migration002FinishedDatePrecision,
 	},
 ]
 

@@ -2,8 +2,16 @@ import { Book } from '@/db/types'
 import { SqlExecutor } from '@/db/sqlExecutor'
 import { createId } from '@/utils/id'
 import { nowIso } from '@/utils/dates'
+import {
+	normalizeIsbn,
+	normalizeText,
+	validateIsbn10,
+	validateIsbn13,
+	validatePublishedYear,
+	validateTitle,
+} from '@/domain/libraryValidation'
 
-interface BookRow {
+export interface BookRow {
 	id: string
 	title: string
 	subtitle: string | null
@@ -25,7 +33,8 @@ interface BookRow {
 
 export interface CreateBookInput {
 	title: string
-	authorText: string
+	/** Empty string is allowed (unknown author / anthology). */
+	authorText?: string | null
 	subtitle?: string | null
 	description?: string | null
 	isbn10?: string | null
@@ -39,7 +48,9 @@ export interface CreateBookInput {
 	sourceExternalId?: string | null
 }
 
-function mapBook (row: BookRow): Book {
+export type UpdateBookInput = Partial<CreateBookInput>
+
+export function mapBook (row: BookRow): Book {
 	return {
 		id: row.id,
 		title: row.title,
@@ -61,22 +72,50 @@ function mapBook (row: BookRow): Book {
 	}
 }
 
+function prepareBookFields (input: CreateBookInput) {
+	const titleError = validateTitle(input.title)
+	if (titleError) {
+		throw new Error('BOOK_TITLE_REQUIRED')
+	}
+	const yearError = validatePublishedYear(input.publishedYear ?? null)
+	if (yearError) {
+		throw new Error('INVALID_PUBLISHED_YEAR')
+	}
+	const isbn10Raw = input.isbn10?.trim() ? normalizeIsbn(input.isbn10) : null
+	const isbn13Raw = input.isbn13?.trim() ? normalizeIsbn(input.isbn13) : null
+	if (validateIsbn10(isbn10Raw)) {
+		throw new Error('INVALID_ISBN10')
+	}
+	if (validateIsbn13(isbn13Raw)) {
+		throw new Error('INVALID_ISBN13')
+	}
+
+	return {
+		title: input.title.trim(),
+		authorText: (input.authorText ?? '').trim(),
+		subtitle: input.subtitle?.trim() ? input.subtitle.trim() : null,
+		description: input.description?.trim() ? input.description.trim() : null,
+		isbn10: isbn10Raw,
+		isbn13: isbn13Raw,
+		publisher: input.publisher?.trim() ? input.publisher.trim() : null,
+		publishedYear: input.publishedYear ?? null,
+		language: input.language?.trim() ? input.language.trim() : null,
+		pageCount: input.pageCount ?? null,
+		coverUri: input.coverUri?.trim() ? input.coverUri.trim() : null,
+		source: input.source ?? null,
+		sourceExternalId: input.sourceExternalId ?? null,
+	}
+}
+
 /**
  * Creates a catalog book row. Internal ID is always locally generated.
+ * Author may be empty for anthologies / unknown authorship.
  */
 export async function createBook (
 	db: SqlExecutor,
 	input: CreateBookInput,
 ): Promise<Book> {
-	const title = input.title.trim()
-	const authorText = input.authorText.trim()
-	if (!title) {
-		throw new Error('BOOK_TITLE_REQUIRED')
-	}
-	if (!authorText) {
-		throw new Error('BOOK_AUTHOR_REQUIRED')
-	}
-
+	const fields = prepareBookFields(input)
 	const id = createId('book')
 	const now = nowIso()
 
@@ -89,19 +128,19 @@ export async function createBook (
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
 		[
 			id,
-			title,
-			input.subtitle ?? null,
-			authorText,
-			input.description ?? null,
-			input.isbn10 ?? null,
-			input.isbn13 ?? null,
-			input.publisher ?? null,
-			input.publishedYear ?? null,
-			input.language ?? null,
-			input.pageCount ?? null,
-			input.coverUri ?? null,
-			input.source ?? null,
-			input.sourceExternalId ?? null,
+			fields.title,
+			fields.subtitle,
+			fields.authorText,
+			fields.description,
+			fields.isbn10,
+			fields.isbn13,
+			fields.publisher,
+			fields.publishedYear,
+			fields.language,
+			fields.pageCount,
+			fields.coverUri,
+			fields.source,
+			fields.sourceExternalId,
 			now,
 			now,
 		],
@@ -112,6 +151,78 @@ export async function createBook (
 		throw new Error('BOOK_CREATE_FAILED')
 	}
 	return created
+}
+
+export async function updateBook (
+	db: SqlExecutor,
+	id: string,
+	input: UpdateBookInput,
+): Promise<Book> {
+	const existing = await getBookById(db, id)
+	if (!existing) {
+		throw new Error('BOOK_NOT_FOUND')
+	}
+
+	const merged: CreateBookInput = {
+		title: input.title ?? existing.title,
+		authorText:
+			input.authorText !== undefined ? input.authorText : existing.authorText,
+		subtitle: input.subtitle !== undefined ? input.subtitle : existing.subtitle,
+		description:
+			input.description !== undefined ? input.description : existing.description,
+		isbn10: input.isbn10 !== undefined ? input.isbn10 : existing.isbn10,
+		isbn13: input.isbn13 !== undefined ? input.isbn13 : existing.isbn13,
+		publisher:
+			input.publisher !== undefined ? input.publisher : existing.publisher,
+		publishedYear:
+			input.publishedYear !== undefined
+				? input.publishedYear
+				: existing.publishedYear,
+		language: input.language !== undefined ? input.language : existing.language,
+		pageCount:
+			input.pageCount !== undefined ? input.pageCount : existing.pageCount,
+		coverUri: input.coverUri !== undefined ? input.coverUri : existing.coverUri,
+		source: input.source !== undefined ? input.source : existing.source,
+		sourceExternalId:
+			input.sourceExternalId !== undefined
+				? input.sourceExternalId
+				: existing.sourceExternalId,
+	}
+
+	const fields = prepareBookFields(merged)
+	const now = nowIso()
+
+	await db.runAsync(
+		`UPDATE books SET
+			title = ?, subtitle = ?, author_text = ?, description = ?,
+			isbn10 = ?, isbn13 = ?, publisher = ?, published_year = ?,
+			language = ?, page_count = ?, cover_uri = ?, source = ?,
+			source_external_id = ?, updated_at = ?
+		 WHERE id = ?`,
+		[
+			fields.title,
+			fields.subtitle,
+			fields.authorText,
+			fields.description,
+			fields.isbn10,
+			fields.isbn13,
+			fields.publisher,
+			fields.publishedYear,
+			fields.language,
+			fields.pageCount,
+			fields.coverUri,
+			fields.source,
+			fields.sourceExternalId,
+			now,
+			id,
+		],
+	)
+
+	const updated = await getBookById(db, id)
+	if (!updated) {
+		throw new Error('BOOK_UPDATE_FAILED')
+	}
+	return updated
 }
 
 export async function getBookById (
@@ -155,4 +266,46 @@ export async function deleteBookHard (
 	id: string,
 ): Promise<void> {
 	await db.runAsync(`DELETE FROM books WHERE id = ?`, [id])
+}
+
+/**
+ * Find catalog books that look like duplicates of the given title/author/ISBN.
+ */
+export async function findSimilarBooks (
+	db: SqlExecutor,
+	input: {
+		title: string
+		authorText?: string | null
+		isbn10?: string | null
+		isbn13?: string | null
+		excludeBookId?: string
+	},
+): Promise<Book[]> {
+	const titleNorm = normalizeText(input.title)
+	const authorNorm = normalizeText(input.authorText ?? '')
+	const isbn10 = input.isbn10?.trim() ? normalizeIsbn(input.isbn10) : null
+	const isbn13 = input.isbn13?.trim() ? normalizeIsbn(input.isbn13) : null
+
+	const rows = await db.getAllAsync<BookRow>(
+		`SELECT * FROM books WHERE archived_at IS NULL`,
+	)
+
+	return rows
+		.map(mapBook)
+		.filter((book) => {
+			if (input.excludeBookId && book.id === input.excludeBookId) {
+				return false
+			}
+			if (isbn13 && book.isbn13 && book.isbn13 === isbn13) {
+				return true
+			}
+			if (isbn10 && book.isbn10 && book.isbn10 === isbn10) {
+				return true
+			}
+			const sameTitle = normalizeText(book.title) === titleNorm
+			const sameAuthor =
+				authorNorm.length === 0 ||
+				normalizeText(book.authorText) === authorNorm
+			return sameTitle && sameAuthor
+		})
 }

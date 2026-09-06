@@ -2,13 +2,12 @@
  * Domain / persistence types for the reading diary.
  *
  * Critical rule: Book catalog data is separate from library_entries
- * (user state). Deleting or archiving a library entry must not
- * destroy reading history when soft-archive is used; hard deletes are
- * restricted by foreign keys where history must survive.
+ * (user state). Soft-archive keeps reading history intact.
  */
 
 import type {
 	BookFormat,
+	FinishedDatePrecision,
 	GoalPeriod,
 	GoalType,
 	LibraryStatus,
@@ -50,11 +49,23 @@ export interface LibraryEntry {
 	audioDurationSeconds: number | null
 	startedAt: string | null
 	finishedAt: string | null
+	/** EXACT | YEAR | UNKNOWN — null when not finished. */
+	finishedDatePrecision: FinishedDatePrecision | null
+	finishedYear: number | null
+	/** Local calendar date YYYY-MM-DD when precision is EXACT. */
+	finishedOn: string | null
 	rating: number | null
 	reviewText: string | null
 	createdAt: string
 	updatedAt: string
 	archivedAt: string | null
+}
+
+/** Joined view used by library list / details / today. */
+export interface LibraryBookItem {
+	entry: LibraryEntry
+	book: Book
+	shelfIds: string[]
 }
 
 export interface ReadingSession {
@@ -114,7 +125,6 @@ export interface ReadingGoal {
 
 export interface AppSettings {
 	reminderEnabled: boolean
-	/** Local wall-clock HH:mm when reminders are enabled later. */
 	reminderTime: string
 	defaultProgressMode: ProgressMode
 	theme: ThemePreference
@@ -125,4 +135,13 @@ export interface AppSettings {
 export interface AppMeta {
 	key: string
 	value: string
+}
+
+export interface LibraryStatusCounts {
+	all: number
+	WANT_TO_READ: number
+	READING: number
+	FINISHED: number
+	PAUSED: number
+	ABANDONED: number
 }
