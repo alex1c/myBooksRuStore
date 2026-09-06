@@ -1,0 +1,80 @@
+import { Stack } from 'expo-router'
+import * as SplashScreen from 'expo-splash-screen'
+import { StatusBar } from 'expo-status-bar'
+import { useEffect } from 'react'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+
+import { AppErrorBoundary } from '@/components/ErrorBoundary'
+import { ErrorState, LoadingState } from '@/components/ui'
+import { appCopy } from '@/constants/copy'
+import { colors } from '@/constants/theme'
+import { DatabaseProvider } from '@/context/DatabaseContext'
+import { useAppBootstrap } from '@/hooks/useAppBootstrap'
+
+// Keep splash visible until DB bootstrap finishes (or fails recoverably).
+SplashScreen.preventAutoHideAsync().catch(() => {
+	// Ignore if splash is already hidden in fast refresh / tests.
+})
+
+/**
+ * Root layout: bootstrap SQLite, then mount tab navigation.
+ */
+export default function RootLayout () {
+	const { status, database, retry } = useAppBootstrap()
+
+	useEffect(() => {
+		if (status === 'ready' || status === 'error') {
+			SplashScreen.hideAsync().catch(() => undefined)
+		}
+	}, [status])
+
+	if (status === 'loading') {
+		return (
+			<SafeAreaProvider>
+				<StatusBar style="dark" />
+				<LoadingState message={appCopy.loading} />
+			</SafeAreaProvider>
+		)
+	}
+
+	if (status === 'error' || !database) {
+		return (
+			<SafeAreaProvider>
+				<StatusBar style="dark" />
+				<ErrorState
+					title={appCopy.bootstrapErrorTitle}
+					message={appCopy.bootstrapErrorMessage}
+					actionLabel={appCopy.retry}
+					onRetry={retry}
+				/>
+			</SafeAreaProvider>
+		)
+	}
+
+	return (
+		<SafeAreaProvider>
+			<AppErrorBoundary>
+				<DatabaseProvider value={database}>
+					<StatusBar style="dark" />
+					<Stack
+						screenOptions={{
+							headerShown: false,
+							contentStyle: { backgroundColor: colors.background },
+						}}
+					>
+						<Stack.Screen name="(tabs)" />
+						<Stack.Screen
+							name="about"
+							options={{
+								presentation: 'modal',
+								headerShown: true,
+								title: 'О приложении',
+								headerTintColor: colors.primary,
+							}}
+						/>
+					</Stack>
+				</DatabaseProvider>
+			</AppErrorBoundary>
+		</SafeAreaProvider>
+	)
+}

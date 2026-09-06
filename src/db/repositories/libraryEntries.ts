@@ -1,0 +1,186 @@
+import {
+	isBookFormat,
+	isLibraryStatus,
+	isProgressMode,
+	type BookFormat,
+	type LibraryStatus,
+	type ProgressMode,
+} from '@/constants/domain'
+import { LibraryEntry } from '@/db/types'
+import { SqlExecutor } from '@/db/sqlExecutor'
+import { createId } from '@/utils/id'
+import { nowIso } from '@/utils/dates'
+
+interface LibraryEntryRow {
+	id: string
+	book_id: string
+	status: string
+	format: string
+	progress_mode: string
+	current_page: number | null
+	total_pages: number | null
+	current_percent: number | null
+	audio_position_seconds: number | null
+	audio_duration_seconds: number | null
+	started_at: string | null
+	finished_at: string | null
+	rating: number | null
+	review_text: string | null
+	created_at: string
+	updated_at: string
+	archived_at: string | null
+}
+
+export interface CreateLibraryEntryInput {
+	bookId: string
+	status?: LibraryStatus
+	format?: BookFormat
+	progressMode?: ProgressMode
+	currentPage?: number | null
+	totalPages?: number | null
+	currentPercent?: number | null
+	audioPositionSeconds?: number | null
+	audioDurationSeconds?: number | null
+}
+
+function mapLibraryEntry (row: LibraryEntryRow): LibraryEntry {
+	if (
+		!isLibraryStatus(row.status) ||
+		!isBookFormat(row.format) ||
+		!isProgressMode(row.progress_mode)
+	) {
+		throw new Error('INVALID_LIBRARY_ENTRY_ENUM')
+	}
+
+	return {
+		id: row.id,
+		bookId: row.book_id,
+		status: row.status,
+		format: row.format,
+		progressMode: row.progress_mode,
+		currentPage: row.current_page,
+		totalPages: row.total_pages,
+		currentPercent: row.current_percent,
+		audioPositionSeconds: row.audio_position_seconds,
+		audioDurationSeconds: row.audio_duration_seconds,
+		startedAt: row.started_at,
+		finishedAt: row.finished_at,
+		rating: row.rating,
+		reviewText: row.review_text,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+		archivedAt: row.archived_at,
+	}
+}
+
+/**
+ * Adds a book to the user library with default WANT_TO_READ / PAPER / PAGES.
+ */
+export async function createLibraryEntry (
+	db: SqlExecutor,
+	input: CreateLibraryEntryInput,
+): Promise<LibraryEntry> {
+	const status = input.status ?? 'WANT_TO_READ'
+	const format = input.format ?? 'PAPER'
+	const progressMode = input.progressMode ?? 'PAGES'
+
+	if (!isLibraryStatus(status)) {
+		throw new Error('INVALID_LIBRARY_STATUS')
+	}
+	if (!isBookFormat(format)) {
+		throw new Error('INVALID_BOOK_FORMAT')
+	}
+	if (!isProgressMode(progressMode)) {
+		throw new Error('INVALID_PROGRESS_MODE')
+	}
+
+	const id = createId('lib')
+	const now = nowIso()
+
+	await db.runAsync(
+		`INSERT INTO library_entries (
+			id, book_id, status, format, progress_mode,
+			current_page, total_pages, current_percent,
+			audio_position_seconds, audio_duration_seconds,
+			started_at, finished_at, rating, review_text,
+			created_at, updated_at, archived_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, ?, NULL)`,
+		[
+			id,
+			input.bookId,
+			status,
+			format,
+			progressMode,
+			input.currentPage ?? null,
+			input.totalPages ?? null,
+			input.currentPercent ?? null,
+			input.audioPositionSeconds ?? null,
+			input.audioDurationSeconds ?? null,
+			now,
+			now,
+		],
+	)
+
+	const created = await getLibraryEntryById(db, id)
+	if (!created) {
+		throw new Error('LIBRARY_ENTRY_CREATE_FAILED')
+	}
+	return created
+}
+
+export async function getLibraryEntryById (
+	db: SqlExecutor,
+	id: string,
+): Promise<LibraryEntry | null> {
+	const row = await db.getFirstAsync<LibraryEntryRow>(
+		`SELECT * FROM library_entries WHERE id = ?`,
+		[id],
+	)
+	return row ? mapLibraryEntry(row) : null
+}
+
+export async function listActiveLibraryEntries (
+	db: SqlExecutor,
+): Promise<LibraryEntry[]> {
+	const rows = await db.getAllAsync<LibraryEntryRow>(
+		`SELECT * FROM library_entries
+		 WHERE archived_at IS NULL
+		 ORDER BY updated_at DESC`,
+	)
+	return rows.map(mapLibraryEntry)
+}
+
+/**
+ * Soft-removes a book from the active library without deleting sessions/notes.
+ */
+export async function archiveLibraryEntry (
+	db: SqlExecutor,
+	id: string,
+): Promise<void> {
+	const now = nowIso()
+	await db.runAsync(
+		`UPDATE library_entries
+		 SET archived_at = ?, updated_at = ?
+		 WHERE id = ? AND archived_at IS NULL`,
+		[now, now, id],
+	)
+}
+
+export async function countActiveLibraryEntries (
+	db: SqlExecutor,
+): Promise<number> {
+	const row = await db.getFirstAsync<{ count: number }>(
+		`SELECT COUNT(*) AS count FROM library_entries WHERE archived_at IS NULL`,
+	)
+	return row?.count ?? 0
+}
+
+/**
+ * Hard-delete. Fails with FK RESTRICT when reading sessions/notes exist.
+ */
+export async function deleteLibraryEntryHard (
+	db: SqlExecutor,
+	id: string,
+): Promise<void> {
+	await db.runAsync(`DELETE FROM library_entries WHERE id = ?`, [id])
+}
