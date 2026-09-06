@@ -9,7 +9,7 @@ import {
 	Screen,
 	SecondaryButton,
 } from '@/components/ui'
-import { sessionCopy } from '@/constants/copy'
+import { appCopy, diaryCopy, sessionCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import {
@@ -132,6 +132,53 @@ export default function ActiveSessionScreen () {
 							params: { sessionId: session.id },
 						})
 					}
+				/>
+				<SecondaryButton
+					label={diaryCopy.addNoteDuringSession}
+					onPress={() => {
+						Alert.alert(diaryCopy.addNote, undefined, [
+							{
+								text: diaryCopy.typeQuote,
+								onPress: () =>
+									router.push({
+										pathname: '/notes/new',
+										params: {
+											entryId: item.entry.id,
+											type: 'QUOTE',
+											sessionId: session.id,
+											returnTo: 'session',
+										},
+									}),
+							},
+							{
+								text: diaryCopy.typeThought,
+								onPress: () =>
+									router.push({
+										pathname: '/notes/new',
+										params: {
+											entryId: item.entry.id,
+											type: 'THOUGHT',
+											sessionId: session.id,
+											returnTo: 'session',
+										},
+									}),
+							},
+							{
+								text: diaryCopy.typeNote,
+								onPress: () =>
+									router.push({
+										pathname: '/notes/new',
+										params: {
+											entryId: item.entry.id,
+											type: 'NOTE',
+											sessionId: session.id,
+											returnTo: 'session',
+										},
+									}),
+							},
+							{ text: appCopy.cancel, style: 'cancel' },
+						])
+					}}
 				/>
 				<SecondaryButton
 					label={sessionCopy.cancelSession}

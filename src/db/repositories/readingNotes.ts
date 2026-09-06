@@ -1,3 +1,7 @@
+/**
+ * Reading notes repository — quotes, thoughts, and free-form notes.
+ */
+
 import type { NoteType } from '@/constants/domain'
 import { isNoteType } from '@/constants/domain'
 import { ReadingNote } from '@/db/types'
@@ -28,7 +32,24 @@ export interface CreateReadingNoteInput {
 	audioPositionSeconds?: number | null
 }
 
-function mapNote (row: ReadingNoteRow): ReadingNote {
+export type UpdateReadingNoteInput = Partial<{
+	type: NoteType
+	text: string
+	page: number | null
+	percent: number | null
+	audioPositionSeconds: number | null
+}>
+
+export interface ListNotesQuery {
+	libraryEntryId?: string
+	types?: NoteType[]
+	/** Case-insensitive substring match applied in SQL for ASCII; callers may refine. */
+	search?: string
+	limit?: number
+	offset?: number
+}
+
+export function mapReadingNote (row: ReadingNoteRow): ReadingNote {
 	if (!isNoteType(row.type)) {
 		throw new Error('INVALID_NOTE_TYPE')
 	}
@@ -46,6 +67,9 @@ function mapNote (row: ReadingNoteRow): ReadingNote {
 	}
 }
 
+/**
+ * Inserts a note. Outer whitespace is trimmed; internal newlines/spaces kept.
+ */
 export async function createReadingNote (
 	db: SqlExecutor,
 	input: CreateReadingNoteInput,
@@ -56,6 +80,24 @@ export async function createReadingNote (
 	const text = input.text.trim()
 	if (!text) {
 		throw new Error('NOTE_TEXT_REQUIRED')
+	}
+
+	const entry = await db.getFirstAsync<{ id: string }>(
+		`SELECT id FROM library_entries WHERE id = ? LIMIT 1`,
+		[input.libraryEntryId],
+	)
+	if (!entry) {
+		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
+	}
+
+	if (input.readingSessionId) {
+		const session = await db.getFirstAsync<{ id: string }>(
+			`SELECT id FROM reading_sessions WHERE id = ? LIMIT 1`,
+			[input.readingSessionId],
+		)
+		if (!session) {
+			throw new Error('SESSION_NOT_FOUND')
+		}
 	}
 
 	const id = createId('note')
@@ -95,7 +137,104 @@ export async function getReadingNoteById (
 		`SELECT * FROM reading_notes WHERE id = ?`,
 		[id],
 	)
-	return row ? mapNote(row) : null
+	return row ? mapReadingNote(row) : null
+}
+
+export async function updateReadingNote (
+	db: SqlExecutor,
+	id: string,
+	input: UpdateReadingNoteInput,
+): Promise<ReadingNote> {
+	const existing = await getReadingNoteById(db, id)
+	if (!existing) {
+		throw new Error('NOTE_NOT_FOUND')
+	}
+
+	const nextType = input.type ?? existing.type
+	if (!isNoteType(nextType)) {
+		throw new Error('INVALID_NOTE_TYPE')
+	}
+
+	const nextText =
+		input.text !== undefined ? input.text.trim() : existing.text
+	if (!nextText) {
+		throw new Error('NOTE_TEXT_REQUIRED')
+	}
+
+	const nextPage =
+		input.page !== undefined ? input.page : existing.page
+	const nextPercent =
+		input.percent !== undefined ? input.percent : existing.percent
+	const nextAudio =
+		input.audioPositionSeconds !== undefined
+			? input.audioPositionSeconds
+			: existing.audioPositionSeconds
+
+	const now = nowIso()
+	await db.runAsync(
+		`UPDATE reading_notes SET
+			type = ?,
+			text = ?,
+			page = ?,
+			percent = ?,
+			audio_position_seconds = ?,
+			updated_at = ?
+		WHERE id = ?`,
+		[nextType, nextText, nextPage, nextPercent, nextAudio, now, id],
+	)
+
+	const updated = await getReadingNoteById(db, id)
+	if (!updated) {
+		throw new Error('NOTE_UPDATE_FAILED')
+	}
+	return updated
+}
+
+/**
+ * Hard-deletes a single note. Does not touch books or sessions.
+ */
+export async function deleteReadingNote (
+	db: SqlExecutor,
+	id: string,
+): Promise<void> {
+	const existing = await getReadingNoteById(db, id)
+	if (!existing) {
+		throw new Error('NOTE_NOT_FOUND')
+	}
+	await db.runAsync(`DELETE FROM reading_notes WHERE id = ?`, [id])
+}
+
+/** Newest-first notes for one library entry (or all when entry omitted). */
+export async function listReadingNotes (
+	db: SqlExecutor,
+	query: ListNotesQuery = {},
+): Promise<ReadingNote[]> {
+	const clauses: string[] = []
+	const params: (string | number)[] = []
+
+	if (query.libraryEntryId) {
+		clauses.push('library_entry_id = ?')
+		params.push(query.libraryEntryId)
+	}
+	if (query.types && query.types.length > 0) {
+		const placeholders = query.types.map(() => '?').join(', ')
+		clauses.push(`type IN (${placeholders})`)
+		params.push(...query.types)
+	}
+
+	const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : ''
+	const limit = query.limit ?? 200
+	const offset = query.offset ?? 0
+	params.push(limit, offset)
+
+	const rows = await db.getAllAsync<ReadingNoteRow>(
+		`SELECT * FROM reading_notes
+		 ${where}
+		 ORDER BY created_at DESC, id DESC
+		 LIMIT ? OFFSET ?`,
+		params,
+	)
+	return rows.map(mapReadingNote)
 }
 
 export async function countNotesForEntry (
@@ -107,4 +246,37 @@ export async function countNotesForEntry (
 		[libraryEntryId],
 	)
 	return row?.count ?? 0
+}
+
+export interface NoteTypeCounts {
+	QUOTE: number
+	THOUGHT: number
+	NOTE: number
+	total: number
+}
+
+export async function countNotesByTypeForEntry (
+	db: SqlExecutor,
+	libraryEntryId: string,
+): Promise<NoteTypeCounts> {
+	const rows = await db.getAllAsync<{ type: string; count: number }>(
+		`SELECT type, COUNT(*) AS count
+		 FROM reading_notes
+		 WHERE library_entry_id = ?
+		 GROUP BY type`,
+		[libraryEntryId],
+	)
+	const counts: NoteTypeCounts = {
+		QUOTE: 0,
+		THOUGHT: 0,
+		NOTE: 0,
+		total: 0,
+	}
+	for (const row of rows) {
+		if (isNoteType(row.type)) {
+			counts[row.type] = row.count
+			counts.total += row.count
+		}
+	}
+	return counts
 }

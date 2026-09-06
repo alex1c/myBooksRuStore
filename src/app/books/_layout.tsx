@@ -26,6 +26,10 @@ export default function BooksLayout () {
 				name="[id]/history"
 				options={{ title: 'История чтения' }}
 			/>
+			<Stack.Screen
+				name="[id]/notes"
+				options={{ title: 'Все записи' }}
+			/>
 		</Stack>
 	)
 }

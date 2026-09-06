@@ -48,8 +48,13 @@ export {
 
 export {
 	createReadingNote,
+	updateReadingNote,
+	deleteReadingNote,
 	getReadingNoteById,
+	listReadingNotes,
 	countNotesForEntry,
+	countNotesByTypeForEntry,
+	mapReadingNote,
 } from './readingNotes'
 
 export {

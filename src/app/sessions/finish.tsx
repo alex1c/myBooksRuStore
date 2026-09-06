@@ -9,7 +9,7 @@ import {
 	SecondaryButton,
 	TextField,
 } from '@/components/ui'
-import { sessionCopy } from '@/constants/copy'
+import { sessionCopy, diaryCopy } from '@/constants/copy'
 import { colors, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import {
@@ -311,6 +311,19 @@ export default function FinishSessionScreen () {
 					label={sessionCopy.save}
 					onPress={() => void handleSave()}
 					loading={saving}
+				/>
+				<SecondaryButton
+					label={diaryCopy.addNoteAfterSession}
+					onPress={() =>
+						router.push({
+							pathname: '/notes/new',
+							params: {
+								entryId: item.entry.id,
+								type: 'NOTE',
+								sessionId: session.id,
+							},
+						})
+					}
 				/>
 				<SecondaryButton
 					label={sessionCopy.discard}

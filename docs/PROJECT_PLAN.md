@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 4 — Reading tracker** ← DONE  
-**Phase 5 — Diary / quotes / thoughts** ← NEXT
+**Phase 5 — Diary / quotes / thoughts** ← DONE  
+**Phase 6 — Calendar / streak / goals** ← NEXT
 
 ## Phases
 
@@ -13,8 +13,8 @@
 | 2 | Library | **DONE** |
 | 3 | Book search / ISBN | **DONE** |
 | 4 | Reading tracker | **DONE** |
-| 5 | Diary / quotes / thoughts | **NEXT** |
-| 6 | Calendar / streak / goals | Planned |
+| 5 | Diary / quotes / thoughts | **DONE** |
+| 6 | Calendar / streak / goals | **NEXT** |
 | 7 | Statistics | Planned |
 | 8 | Year in Books | Planned |
 | 9 | Backup / restore / export | Planned |
@@ -26,34 +26,31 @@
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 4 scope (DONE)
+## Phase 5 scope (DONE)
 
-- Today as primary workspace: READING cards, quick progress, start session
-- Quick progress for PAGES / PERCENT / TIME + exact input + undo snackbar
-- Active reading sessions persisted in SQLite (`ended_at IS NULL`)
-- Timestamp-based timer (survives background / restart)
-- One active session constraint (service + partial unique index)
-- Atomic finish: session + library progress + progress event
-- Cancel session without changing book progress
-- Book completion offer (explicit FINISHED, optional rating later)
-- Session history on book details + full history screen
-- `reading_progress_events` audit trail (migration 004)
+- Notes on existing `reading_notes`: QUOTE / THOUGHT / NOTE
+- Fast add from book details, active session, finish screen
+- Optional location (page / percent / audio) with smart defaults
+- Auto-link to active reading session (`ON DELETE SET NULL`)
+- Book details notes section + full book notes screen
+- Diary tab timeline: completed sessions + notes, local-day grouping
+- Filters (all / sessions / quotes / thoughts / notes) + book filter + search
+- Edit / delete / copy / share; dirty-form back guard
+- Progress events intentionally excluded from diary (noise)
 
 ## Explicitly deferred
 
-- Quotes / thoughts / diary timeline (Phase 5)
-- Streak / calendar / goals UI (Phase 6)
+- Calendar / streak / goals UI (Phase 6)
 - Statistics charts (Phase 7)
-- Backup / restore / PDF / CSV / OCR
+- OCR scan-into-quote (Phase 11) — UI reserved a slot near note input
+- Favorite quotes / tags / rich text
+- Backup / restore / PDF / CSV
 - Notifications / AppMetrica / Yandex Ads
 - Auth / cloud / social / AI
-- Production keystore
-- Full reread cycle model (future enhancement)
-- Pause-within-session timer architecture (wall-clock only in 1.0)
 
 ## Product principles
 
 - Offline-first personal reading diary
-- Everyday reading actions in 2–3 taps
-- Soft-archive over destructive deletes for reading history
-- External catalogue is metadata-only — never the source of truth
+- Everyday reading + reflection in few taps
+- Soft-archive over destructive deletes for books/history
+- Notes may be hard-deleted by explicit user action only

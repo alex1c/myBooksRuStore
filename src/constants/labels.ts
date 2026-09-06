@@ -7,6 +7,7 @@ import type {
 	FinishedDatePrecision,
 	LibrarySort,
 	LibraryStatus,
+	NoteType,
 	ProgressMode,
 } from '@/constants/domain'
 
@@ -38,6 +39,12 @@ export const progressModeLabels: Record<ProgressMode, string> = {
 	PAGES: 'Страницы',
 	PERCENT: 'Проценты',
 	TIME: 'Время',
+}
+
+export const noteTypeLabels: Record<NoteType, string> = {
+	QUOTE: 'Цитата',
+	THOUGHT: 'Мысль',
+	NOTE: 'Заметка',
 }
 
 export const sortLabels: Record<LibrarySort, string> = {

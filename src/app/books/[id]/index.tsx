@@ -13,7 +13,7 @@ import {
 	Screen,
 	SecondaryButton,
 } from '@/components/ui'
-import { appCopy, bookDetailsCopy, sessionCopy, todayCopy } from '@/constants/copy'
+import { appCopy, bookDetailsCopy, diaryCopy, sessionCopy, todayCopy } from '@/constants/copy'
 import {
 	formatLabels,
 	statusLabels,
@@ -25,6 +25,10 @@ import {
 	getLibraryBookByEntryId,
 	listShelves,
 } from '@/domain/libraryService'
+import {
+	getNoteCountsForBook,
+	listNotesForBook,
+} from '@/domain/diaryService'
 import {
 	ActiveSessionConflictError,
 	applyQuickProgress,
@@ -38,8 +42,9 @@ import {
 	undoProgressEvent,
 	type QuickDelta,
 } from '@/domain/readingTrackerService'
-import type { LibraryBookItem, ReadingSession, Shelf } from '@/db/types'
+import type { LibraryBookItem, ReadingNote, ReadingSession, Shelf } from '@/db/types'
 import { formatProgressLabel, progressRatio } from '@/utils/progress'
+import { NoteCard } from '@/components/notes/NoteCard'
 
 /**
  * Book details — progress actions, sessions history, finish / continue.
@@ -50,6 +55,13 @@ export default function BookDetailsScreen () {
 	const [item, setItem] = useState<LibraryBookItem | null>(null)
 	const [shelves, setShelves] = useState<Shelf[]>([])
 	const [sessions, setSessions] = useState<ReadingSession[]>([])
+	const [notes, setNotes] = useState<ReadingNote[]>([])
+	const [noteCounts, setNoteCounts] = useState({
+		QUOTE: 0,
+		THOUGHT: 0,
+		NOTE: 0,
+		total: 0,
+	})
 	const [loading, setLoading] = useState(true)
 	const [busy, setBusy] = useState(false)
 	const [exactOpen, setExactOpen] = useState(false)
@@ -64,14 +76,18 @@ export default function BookDetailsScreen () {
 		}
 		setLoading(true)
 		try {
-			const [next, shelfRows, history] = await Promise.all([
+			const [next, shelfRows, history, bookNotes, counts] = await Promise.all([
 				getLibraryBookByEntryId(executor, id),
 				listShelves(executor),
 				listBookSessions(executor, id),
+				listNotesForBook(executor, id, { limit: 5 }),
+				getNoteCountsForBook(executor, id),
 			])
 			setItem(next)
 			setShelves(shelfRows)
 			setSessions(history.filter((s) => s.endedAt != null).slice(0, 5))
+			setNotes(bookNotes.slice(0, 5))
+			setNoteCounts(counts)
 		} finally {
 			setLoading(false)
 		}
@@ -402,6 +418,64 @@ export default function BookDetailsScreen () {
 				</Card>
 
 				<Card style={styles.card}>
+					<Text style={styles.section}>{bookDetailsCopy.notes}</Text>
+					{noteCounts.total > 0 ? (
+						<Text style={styles.muted}>
+							{diaryCopy.counts(
+								noteCounts.QUOTE,
+								noteCounts.THOUGHT,
+								noteCounts.NOTE,
+							)}
+						</Text>
+					) : (
+						<Text style={styles.muted}>{diaryCopy.notesEmpty}</Text>
+					)}
+					{notes.map((note) => (
+						<NoteCard
+							key={note.id}
+							note={note}
+							progressMode={item.entry.progressMode}
+							onPress={() => router.push(`/notes/${note.id}`)}
+						/>
+					))}
+					<View style={styles.noteActions}>
+						<SecondaryButton
+							label={diaryCopy.addQuote}
+							onPress={() =>
+								router.push({
+									pathname: '/notes/new',
+									params: { entryId: item.entry.id, type: 'QUOTE' },
+								})
+							}
+						/>
+						<SecondaryButton
+							label={diaryCopy.addThought}
+							onPress={() =>
+								router.push({
+									pathname: '/notes/new',
+									params: { entryId: item.entry.id, type: 'THOUGHT' },
+								})
+							}
+						/>
+						<SecondaryButton
+							label={diaryCopy.addNoteShort}
+							onPress={() =>
+								router.push({
+									pathname: '/notes/new',
+									params: { entryId: item.entry.id, type: 'NOTE' },
+								})
+							}
+						/>
+					</View>
+					<SecondaryButton
+						label={diaryCopy.allNotes}
+						onPress={() =>
+							router.push(`/books/${item.entry.id}/notes`)
+						}
+					/>
+				</Card>
+
+				<Card style={styles.card}>
 					<Text style={styles.section}>{bookDetailsCopy.history}</Text>
 					{sessions.length === 0 ? (
 						<Text style={styles.muted}>{sessionCopy.historyEmpty}</Text>
@@ -570,6 +644,10 @@ const styles = StyleSheet.create({
 		left: spacing.md,
 		right: spacing.md,
 		bottom: spacing.lg,
+	},
+	noteActions: {
+		gap: spacing.xs,
+		marginTop: spacing.xs,
 	},
 	missing: {
 		...typography.body,

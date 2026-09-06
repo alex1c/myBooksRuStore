@@ -159,7 +159,7 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 4 — Reading tracker** (complete). Phase 5 (diary / quotes / thoughts) is next.
+**Phase 5 — Diary / quotes / thoughts** (complete). Phase 6 (calendar / streak / goals) is next.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
 when the network is unavailable.
