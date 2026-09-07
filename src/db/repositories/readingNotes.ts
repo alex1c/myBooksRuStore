@@ -91,12 +91,18 @@ export async function createReadingNote (
 	}
 
 	if (input.readingSessionId) {
-		const session = await db.getFirstAsync<{ id: string }>(
-			`SELECT id FROM reading_sessions WHERE id = ? LIMIT 1`,
+		const session = await db.getFirstAsync<{
+			id: string
+			library_entry_id: string
+		}>(
+			`SELECT id, library_entry_id FROM reading_sessions WHERE id = ? LIMIT 1`,
 			[input.readingSessionId],
 		)
 		if (!session) {
 			throw new Error('SESSION_NOT_FOUND')
+		}
+		if (session.library_entry_id !== input.libraryEntryId) {
+			throw new Error('SESSION_ENTRY_MISMATCH')
 		}
 	}
 

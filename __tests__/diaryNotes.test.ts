@@ -256,6 +256,34 @@ describe('notes + sessions', () => {
 	})
 })
 
+describe('note/session integrity', () => {
+	it('rejects linking a note to a session from another book', async () => {
+		const db = createTestSqlExecutor()
+		const first = await seedBook(db, { title: 'Book A' })
+		const secondBook = await createBook(db, {
+			title: 'Book B',
+			authorText: 'Author',
+		})
+		const secondEntry = await createLibraryEntry(db, {
+			bookId: secondBook.id,
+			status: 'READING',
+			progressMode: 'PAGES',
+			currentPage: 1,
+			totalPages: 10,
+		})
+		const session = await startReadingSession(db, first.entry.id)
+
+		await expect(
+			createNote(db, {
+				libraryEntryId: secondEntry.id,
+				type: 'NOTE',
+				text: 'Wrong book',
+				readingSessionId: session.session.id,
+			}),
+		).rejects.toThrow('SESSION_ENTRY_MISMATCH')
+	})
+})
+
 describe('diary timeline', () => {
 	it('groups by local day and keeps note day after edit', async () => {
 		const db = createTestSqlExecutor()
