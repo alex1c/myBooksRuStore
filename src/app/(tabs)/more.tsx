@@ -7,13 +7,23 @@ import { moreCopy } from '@/constants/copy'
 import { colors, radii, spacing } from '@/constants/theme'
 
 /**
- * More / settings hub — backup, export, archive, shelves, reminders.
+ * More / settings hub — help, backup, export, archive, shelves, reminders.
  */
 export default function MoreScreen () {
 	return (
 		<Screen scroll>
 			<SectionHeader title={moreCopy.title} subtitle={moreCopy.subtitle} />
 			<Card style={styles.card}>
+				<ListRow
+					title={moreCopy.help}
+					subtitle={moreCopy.helpHint}
+					showChevron
+					left={
+						<Ionicons name="help-circle-outline" size={22} color={colors.primary} />
+					}
+					onPress={() => router.push('/help')}
+					style={styles.firstRow}
+				/>
 				<ListRow
 					title={moreCopy.shelves}
 					subtitle={moreCopy.shelvesHint}
@@ -22,7 +32,6 @@ export default function MoreScreen () {
 						<Ionicons name="bookmarks-outline" size={22} color={colors.primary} />
 					}
 					onPress={() => router.push('/shelves')}
-					style={styles.firstRow}
 				/>
 				<ListRow
 					title={moreCopy.archive}

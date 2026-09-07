@@ -1,3 +1,4 @@
+import { ensureHelpHintDefaults } from './helpHints'
 import {
 	isProgressMode,
 	isThemePreference,
@@ -75,6 +76,7 @@ export async function ensureAppSettings (db: SqlExecutor): Promise<AppSettings> 
 		],
 	)
 	// analytics_consent stays unset until the user decides later.
+	await ensureHelpHintDefaults(db)
 	return getAppSettings(db)
 }
 

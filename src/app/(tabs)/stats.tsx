@@ -20,7 +20,7 @@ import {
 	SecondaryButton,
 	SectionHeader,
 } from '@/components/ui'
-import { statsCopy } from '@/constants/copy'
+import { statsCopy, helpCopy } from '@/constants/copy'
 import { statusFilterLabels } from '@/constants/labels'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
@@ -238,6 +238,8 @@ export default function StatsScreen () {
 					icon="stats-chart-outline"
 					title={statsCopy.emptyTitle}
 					description={statsCopy.emptyDescription}
+					actionLabel={helpCopy.howItWorks}
+					onAction={() => router.push('/help/stats')}
 				/>
 			) : null}
 

@@ -5,13 +5,14 @@ import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native
 import { ExactProgressModal } from '@/components/reading/ExactProgressModal'
 import { ReadingNowCard } from '@/components/reading/ReadingNowCard'
 import { UndoSnackbar } from '@/components/reading/UndoSnackbar'
+import { MicroHintBanner } from '@/components/help/MicroHintBanner'
 import {
 	EmptyState,
 	LoadingState,
 	Screen,
 	SectionHeader,
 } from '@/components/ui'
-import { appCopy, sessionCopy, todayCopy, statsCopy } from '@/constants/copy'
+import { appCopy, helpCopy, sessionCopy, todayCopy, statsCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import { listReadingNow } from '@/domain/libraryService'
@@ -21,6 +22,11 @@ import {
 	type GoalProgress,
 } from '@/domain/goalsService'
 import { getStreakSummary, type StreakSummary } from '@/domain/activityService'
+import {
+	dismissHint,
+	HINT_KEYS,
+	shouldShowHint,
+} from '@/domain/help/onboardingService'
 import {
 	ActiveSessionConflictError,
 	applyQuickProgress,
@@ -55,21 +61,24 @@ export default function TodayScreen () {
 		message: string
 		eventId: string
 	} | null>(null)
+	const [showProgressHint, setShowProgressHint] = useState(false)
 	const snackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	const load = useCallback(async () => {
 		setLoading(true)
 		try {
-			const [reading, bundle, goals, streakSummary] = await Promise.all([
+			const [reading, bundle, goals, streakSummary, hint] = await Promise.all([
 				listReadingNow(executor),
 				getActiveSessionBundle(executor),
 				listTodayMotivationGoals(executor),
 				getStreakSummary(executor),
+				shouldShowHint(executor, HINT_KEYS.todayProgress),
 			])
 			setItems(reading)
 			setActive(bundle)
 			setMotivationGoals(goals)
 			setStreak(streakSummary)
+			setShowProgressHint(hint && reading.length > 0)
 		} finally {
 			setLoading(false)
 		}
@@ -321,8 +330,18 @@ export default function TodayScreen () {
 			{items.length > 0 ? (
 				<SectionHeader title={todayCopy.readingSection} />
 			) : null}
+			{showProgressHint && items.length > 0 ? (
+				<MicroHintBanner
+					message={helpCopy.hintTodayProgress}
+					dismissLabel={helpCopy.hintDismiss}
+					onDismiss={() => {
+						setShowProgressHint(false)
+						void dismissHint(executor, HINT_KEYS.todayProgress)
+					}}
+				/>
+			) : null}
 		</View>
-	), [active, motivationGoals, streak, items.length])
+	), [active, motivationGoals, streak, items.length, showProgressHint, executor])
 
 	return (
 		<Screen contentStyle={styles.content}>

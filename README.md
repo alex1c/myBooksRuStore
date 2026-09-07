@@ -161,7 +161,10 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 13 — UX polish** (complete). Phase 14 (AppMetrica + Yandex Ads) is next.
+**Phase 13b — Onboarding & Help** (complete). Phase 14 (AppMetrica + Yandex Ads) is next.
+
+First launch shows a short 4-step guide (skippable). Permanent help lives under
+Ещё → Как пользоваться.
 
 Local reading reminders via `expo-notifications` (no remote push). Settings live under
 Ещё → Напоминания. Notification verification needs a native / EAS Android build — Expo Go

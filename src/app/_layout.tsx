@@ -16,6 +16,7 @@ import {
 } from '@/domain/reminders/expoNotificationsAdapter'
 import { setNotificationsAdapter } from '@/domain/reminders/notificationsAdapter'
 import { useAppBootstrap } from '@/hooks/useAppBootstrap'
+import { useOnboardingGate } from '@/hooks/useOnboardingGate'
 import { useReadingReminderNotificationRouting } from '@/hooks/useReadingReminderNotificationRouting'
 
 // Keep splash visible until DB bootstrap finishes (or fails recoverably).
@@ -33,11 +34,19 @@ if (Platform.OS !== 'web') {
 }
 
 /**
+ * Runs after DatabaseProvider is mounted — notification routing + onboarding gate.
+ */
+function AppNavigationEffects () {
+	useReadingReminderNotificationRouting(true)
+	useOnboardingGate(true)
+	return null
+}
+
+/**
  * Root layout: bootstrap SQLite, then mount tab navigation + library stacks.
  */
 export default function RootLayout () {
 	const { status, database, retry } = useAppBootstrap()
-	useReadingReminderNotificationRouting(status === 'ready')
 
 	useEffect(() => {
 		if (status === 'ready' || status === 'error') {
@@ -72,6 +81,7 @@ export default function RootLayout () {
 		<SafeAreaProvider>
 			<AppErrorBoundary>
 				<DatabaseProvider value={database}>
+					<AppNavigationEffects />
 					<StatusBar style="dark" />
 					<Stack
 						screenOptions={{
@@ -88,6 +98,28 @@ export default function RootLayout () {
 						<Stack.Screen name="notes" />
 						<Stack.Screen name="ocr" />
 						<Stack.Screen name="goals" />
+						<Stack.Screen
+							name="onboarding/index"
+							options={{
+								headerShown: false,
+								animation: 'fade',
+								gestureEnabled: false,
+							}}
+						/>
+						<Stack.Screen
+							name="help/index"
+							options={{
+								headerShown: true,
+								title: 'Как пользоваться',
+							}}
+						/>
+						<Stack.Screen
+							name="help/[section]"
+							options={{
+								headerShown: true,
+								title: 'Справка',
+							}}
+						/>
 						<Stack.Screen
 							name="year-in-books/index"
 							options={{

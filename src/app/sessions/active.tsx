@@ -3,15 +3,21 @@ import { useCallback, useState } from 'react'
 import { Alert, StyleSheet, Text, View } from 'react-native'
 
 import { SessionTimer } from '@/components/reading/SessionTimer'
+import { MicroHintBanner } from '@/components/help/MicroHintBanner'
 import {
 	LoadingState,
 	PrimaryButton,
 	Screen,
 	SecondaryButton,
 } from '@/components/ui'
-import { appCopy, diaryCopy, sessionCopy } from '@/constants/copy'
+import { appCopy, diaryCopy, helpCopy, sessionCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
+import {
+	dismissHint,
+	HINT_KEYS,
+	shouldShowHint,
+} from '@/domain/help/onboardingService'
 import {
 	cancelReadingSession,
 	getActiveSessionBundle,
@@ -30,11 +36,17 @@ export default function ActiveSessionScreen () {
 	const { executor } = useDatabase()
 	const [bundle, setBundle] = useState<ActiveSessionBundle | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [showSessionHint, setShowSessionHint] = useState(false)
 
 	const load = useCallback(async () => {
 		setLoading(true)
 		try {
-			setBundle(await getActiveSessionBundle(executor))
+			const [next, hint] = await Promise.all([
+				getActiveSessionBundle(executor),
+				shouldShowHint(executor, HINT_KEYS.activeSession),
+			])
+			setBundle(next)
+			setShowSessionHint(Boolean(next) && hint)
 		} finally {
 			setLoading(false)
 		}
@@ -111,6 +123,17 @@ export default function ActiveSessionScreen () {
 			<Screen contentStyle={styles.content}>
 				<Text style={styles.bookTitle}>{item.book.title}</Text>
 				<Text style={styles.subtitle}>{sessionCopy.title}</Text>
+
+				{showSessionHint ? (
+					<MicroHintBanner
+						message={helpCopy.hintActiveSession}
+						dismissLabel={helpCopy.hintDismiss}
+						onDismiss={() => {
+							setShowSessionHint(false)
+							void dismissHint(executor, HINT_KEYS.activeSession)
+						}}
+					/>
+				) : null}
 
 				<View style={styles.timerCard}>
 					<SessionTimer startedAt={session.startedAt} />

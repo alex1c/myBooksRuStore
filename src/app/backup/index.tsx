@@ -16,7 +16,7 @@ import {
 	SecondaryButton,
 	SectionHeader,
 } from '@/components/ui'
-import { backupCopy } from '@/constants/copy'
+import { backupCopy, helpCopy } from '@/constants/copy'
 import { colors, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import {
@@ -183,6 +183,10 @@ export default function BackupScreen () {
 				subtitle={backupCopy.subtitle}
 			/>
 			<Text style={styles.privacy}>{backupCopy.privacy}</Text>
+			<SecondaryButton
+				label={helpCopy.backupWhy}
+				onPress={() => router.push('/help/backup')}
+			/>
 
 			<Card style={styles.card}>
 				<Text style={styles.counts}>

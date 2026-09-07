@@ -503,6 +503,8 @@ export const yearInBooksCopy = {
 export const moreCopy = {
 	title: 'Ещё',
 	subtitle: 'Настройки и сведения о приложении',
+	help: 'Как пользоваться',
+	helpHint: 'Краткая инструкция по основным экранам',
 	backup: 'Резервная копия',
 	backupHint: 'Создать или восстановить полную копию данных',
 	exportData: 'Экспорт данных',
@@ -519,6 +521,28 @@ export const moreCopy = {
 	aboutHint: 'Дневник чтения · версия 1.0.0',
 	aboutBody:
 		'Личный offline-first дневник чтения. Основные действия доступны без регистрации и без интернета.',
+} as const
+
+export const onboardingCopy = {
+	skip: 'Пропустить',
+	next: 'Далее',
+	back: 'Назад',
+	start: 'Начать',
+	pageIndicator: (current: number, total: number) =>
+		`Шаг ${current} из ${total}`,
+} as const
+
+export const helpCopy = {
+	title: 'Как пользоваться',
+	subtitle: 'Короткие подсказки по основным возможностям',
+	missing: 'Раздел не найден',
+	howItWorks: 'Как это работает?',
+	backupWhy: 'Зачем нужна резервная копия?',
+	hintTodayProgress:
+		'Прогресс можно менять быстрыми кнопками или через «Указать».',
+	hintActiveSession:
+		'Таймер продолжит считать время, даже если перейти на другой экран.',
+	hintDismiss: 'Понятно',
 } as const
 
 export const remindersCopy = {
