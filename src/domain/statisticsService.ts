@@ -824,7 +824,12 @@ export async function getTopBooks (
 			durationSeconds: v.seconds,
 		}))
 		.filter((b) => b.durationSeconds > 0)
-		.sort((a, b) => b.durationSeconds - a.durationSeconds)
+		.sort((a, b) =>
+			b.durationSeconds - a.durationSeconds ||
+			a.title.localeCompare(b.title) ||
+			a.authorText.localeCompare(b.authorText) ||
+			a.libraryEntryId.localeCompare(b.libraryEntryId),
+		)
 		.slice(0, limit)
 }
 

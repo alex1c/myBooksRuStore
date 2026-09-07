@@ -366,6 +366,24 @@ describe('top books / notes / empty', () => {
 		expect(top[1].title).toBe('1984')
 	})
 
+	it('orders equal-duration top books deterministically', async () => {
+		const db = createTestSqlExecutor()
+		const first = await seedReading(db, { title: 'Бета', page: 1 })
+		const second = await seedReading(db, { title: 'Альфа', page: 1 })
+
+		for (const entry of [first.entry, second.entry]) {
+			const session = await startReadingSession(db, entry.id)
+			await finishReadingSession(db, {
+				sessionId: session.session.id,
+				endedAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+				endPage: 10,
+			})
+		}
+
+		const top = await getTopBooks(db, resolveStatsPeriod('D30'))
+		expect(top.map((book) => book.title)).toEqual(['Альфа', 'Бета'])
+	})
+
 	it('counts notes by createdAt in period', async () => {
 		const db = createTestSqlExecutor()
 		const { entry } = await seedReading(db)
