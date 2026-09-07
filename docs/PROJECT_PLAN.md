@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 10 — Mass import** ← DONE  
-**Phase 11 — OCR quotes** ← NEXT
+**Phase 11 — OCR quotes** ← DONE  
+**Phase 12 — Reminders** ← NEXT
 
 ## Phases
 
@@ -19,24 +19,24 @@
 | 8 | Year in Books | **DONE** |
 | 9 | Backup / restore / export | **DONE** |
 | 10 | Mass import | **DONE** |
-| 11 | OCR quotes | Planned |
+| 11 | OCR quotes | **DONE** |
 | 12 | Notifications | Planned |
 | 13 | UX polish | Planned |
 | 14 | AppMetrica + Ads | Planned |
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 10 scope (DONE)
+## Phase 11 scope (DONE)
 
-- Offline CSV import pipeline: parse → normalize → validate → preview → duplicates → atomic commit → report
-- Formats: our Phase 9 CSV, Goodreads export, generic CSV with column mapping
-- Delimiters `;` / `,` / tab; UTF-8 (+ BOM); quoted multiline fields
-- Duplicate policies: skip (default) / add as another edition; within-file first-wins
-- No fake reading activity (no sessions / progress events from historical import)
-- Entry: Ещё → Импорт
+- On-device quote OCR via `react-native-executorch` (`OCR_RUSSIAN`) — Cyrillic + Latin glyphs
+- Flow: capture → process → edit/preview → save QUOTE (never silent)
+- Entry: book details «Сканировать цитату», note editor «Сканировать текст»
+- Reuses `expo-camera` permissions; temp images cleaned; no cloud photo upload
+- Active reading session continues (timestamp timer); no AUDIOBOOK OCR CTA
+- Requires custom native / EAS / prebuild (not Expo Go)
 
 ## Explicitly deferred
 
-- OCR / notifications / ads
-- Cloud backup providers
-- Unsafe auto-merge update of existing books on import
+- Reminders / notifications / ads
+- Cloud OCR / AI summaries
+- Perspective correction / document scanner

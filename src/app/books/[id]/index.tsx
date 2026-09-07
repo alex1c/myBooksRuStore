@@ -13,7 +13,7 @@ import {
 	Screen,
 	SecondaryButton,
 } from '@/components/ui'
-import { appCopy, bookDetailsCopy, diaryCopy, sessionCopy, todayCopy } from '@/constants/copy'
+import { appCopy, bookDetailsCopy, diaryCopy, ocrCopy, sessionCopy, todayCopy } from '@/constants/copy'
 import {
 	formatLabels,
 	statusLabels,
@@ -45,6 +45,10 @@ import {
 import type { LibraryBookItem, ReadingNote, ReadingSession, Shelf } from '@/db/types'
 import { formatProgressLabel, progressRatio } from '@/utils/progress'
 import { NoteCard } from '@/components/notes/NoteCard'
+import { getActiveSession } from '@/db/repositories/readingSessions'
+import {
+	setPendingOcrDraft,
+} from '@/domain/ocr/ocrService'
 
 /**
  * Book details — progress actions, sessions history, finish / continue.
@@ -448,6 +452,44 @@ export default function BookDetailsScreen () {
 								})
 							}
 						/>
+						{item.entry.format !== 'AUDIOBOOK' ? (
+							<SecondaryButton
+								label={ocrCopy.scanQuoteAction}
+								onPress={() => {
+									void (async () => {
+										const active = await getActiveSession(executor)
+										const sessionId =
+											active && active.libraryEntryId === item.entry.id
+												? active.id
+												: undefined
+										setPendingOcrDraft({
+											entryId: item.entry.id,
+											sessionId: sessionId ?? null,
+											returnTo: 'book',
+											pageHint:
+												item.entry.progressMode === 'PAGES' &&
+												item.entry.currentPage != null
+													? String(item.entry.currentPage)
+													: null,
+											existingDraft: '',
+										})
+										router.push({
+											pathname: '/ocr/scan',
+											params: {
+												entryId: item.entry.id,
+												sessionId,
+												returnTo: 'book',
+												pageHint:
+													item.entry.progressMode === 'PAGES' &&
+													item.entry.currentPage != null
+														? String(item.entry.currentPage)
+														: undefined,
+											},
+										})
+									})()
+								}}
+							/>
+						) : null}
 						<SecondaryButton
 							label={diaryCopy.addThought}
 							onPress={() =>

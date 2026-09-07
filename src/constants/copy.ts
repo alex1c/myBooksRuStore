@@ -154,7 +154,7 @@ export const searchCopy = {
 export const scanCopy = {
 	title: 'Сканер ISBN',
 	permissionExplain:
-		'Камера нужна только для сканирования штрихкода книги.',
+		'Камера нужна, чтобы сканировать штрихкод книги или сфотографировать цитату.',
 	permissionAllow: 'Разрешить камеру',
 	permissionDeniedTitle: 'Разрешение на камеру не предоставлено',
 	permissionDeniedHint: 'Можно ввести ISBN вручную или повторить запрос.',
@@ -164,6 +164,40 @@ export const scanCopy = {
 	notBookland: 'Этот штрихкод не похож на ISBN книги.',
 	notFound: 'Книга с таким ISBN не найдена',
 	manualFallback: 'Добавить вручную',
+} as const
+
+export const ocrCopy = {
+	scanTitle: 'Сканировать цитату',
+	scanHint: 'Наведите камеру на текст.',
+	scanButton: 'Сфотографировать',
+	scanTextAction: 'Сканировать текст',
+	scanQuoteAction: 'Сканировать цитату',
+	permissionExplain:
+		'Камера нужна, чтобы сфотографировать цитату из книги.',
+	permissionAllow: 'Разрешить камеру',
+	permissionDeniedTitle: 'Разрешение на камеру не предоставлено',
+	permissionDeniedHint:
+		'Вы можете ввести цитату вручную — камера для этого не обязательна.',
+	tryAgain: 'Попробовать снова',
+	manualEntry: 'Ввести вручную',
+	privacy: 'Текст распознаётся на устройстве. Фото никуда не отправляется.',
+	processing: 'Распознаём текст…',
+	downloadingModel: 'Подготавливаем распознавание…',
+	failed: 'Не удалось распознать текст.',
+	empty: 'Текст на снимке не найден.',
+	retake: 'Снять ещё раз',
+	reviewTitle: 'Проверьте цитату',
+	reviewHint: 'Исправьте текст перед сохранением.',
+	joinLines: 'Объединить строки',
+	useText: 'Использовать текст',
+	saveQuote: 'Сохранить цитату',
+	replaceDraft: 'Заменить черновик',
+	appendDraft: 'Добавить к черновику',
+	pageLabel: 'Страница',
+	existingDraftTitle: 'В черновике уже есть текст',
+	existingDraftMessage:
+		'После распознавания вы сможете заменить черновик или добавить текст.',
+	continueScan: 'Продолжить',
 } as const
 
 export const addBookCopy = {

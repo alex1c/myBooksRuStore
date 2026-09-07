@@ -9,7 +9,7 @@ import {
 	SecondaryButton,
 	TextField,
 } from '@/components/ui'
-import { appCopy, diaryCopy } from '@/constants/copy'
+import { appCopy, diaryCopy, ocrCopy } from '@/constants/copy'
 import type { NoteType } from '@/constants/domain'
 import { isNoteType } from '@/constants/domain'
 import { colors, radii, spacing, typography } from '@/constants/theme'
@@ -20,6 +20,10 @@ import {
 	notePlaceholder,
 } from '@/domain/diaryService'
 import { getActiveSession } from '@/db/repositories/readingSessions'
+import {
+	setPendingOcrDraft,
+	takePendingOcrDraft,
+} from '@/domain/ocr/ocrService'
 import type { LibraryBookItem } from '@/db/types'
 import {
 	hoursMinutesToSeconds,
@@ -37,6 +41,7 @@ export default function NewNoteScreen () {
 		type?: string
 		sessionId?: string
 		returnTo?: string
+		ocrApplied?: string
 	}>()
 
 	const initialType: NoteType = isNoteType(params.type ?? '')
@@ -71,19 +76,21 @@ export default function NewNoteScreen () {
 
 		// Smart default location from current book progress.
 		if (book.entry.progressMode === 'PAGES' && book.entry.currentPage != null) {
-			setPage(String(book.entry.currentPage))
+			setPage((prev) => (prev ? prev : String(book.entry.currentPage)))
 		} else if (
 			book.entry.progressMode === 'PERCENT' &&
 			book.entry.currentPercent != null
 		) {
-			setPercent(String(Math.round(book.entry.currentPercent)))
+			setPercent((prev) =>
+				prev ? prev : String(Math.round(book.entry.currentPercent!)),
+			)
 		} else if (
 			book.entry.progressMode === 'TIME' &&
 			book.entry.audioPositionSeconds != null
 		) {
 			const hm = secondsToHoursMinutes(book.entry.audioPositionSeconds)
-			setHours(String(hm.hours || ''))
-			setMinutes(String(hm.minutes || ''))
+			setHours((prev) => (prev ? prev : String(hm.hours || '')))
+			setMinutes((prev) => (prev ? prev : String(hm.minutes || '')))
 		}
 
 		if (!params.sessionId) {
@@ -92,7 +99,20 @@ export default function NewNoteScreen () {
 				setSessionId(active.id)
 			}
 		}
-	}, [entryId, executor, params.sessionId])
+
+		// Apply confirmed OCR text after review (never silent overwrite without review).
+		if (params.ocrApplied === '1') {
+			const draft = takePendingOcrDraft()
+			if (draft?.confirmedText) {
+				setText(draft.confirmedText)
+				setType('QUOTE')
+				setDirty(true)
+				if (draft.pageHint) {
+					setPage(draft.pageHint)
+				}
+			}
+		}
+	}, [entryId, executor, params.sessionId, params.ocrApplied])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -120,6 +140,45 @@ export default function NewNoteScreen () {
 		})
 		return unsubscribe
 	}, [navigation, dirty, saving])
+
+	const canScanQuote =
+		type === 'QUOTE' &&
+		item != null &&
+		item.entry.format !== 'AUDIOBOOK' &&
+		item.entry.archivedAt == null
+
+	const handleOpenOcr = () => {
+		if (!entryId || !item) {
+			return
+		}
+		const startScan = () => {
+			setPendingOcrDraft({
+				entryId,
+				sessionId,
+				returnTo: 'editor',
+				pageHint: page.trim() || null,
+				existingDraft: text,
+			})
+			router.push({
+				pathname: '/ocr/scan',
+				params: {
+					entryId,
+					sessionId: sessionId ?? undefined,
+					returnTo: 'editor',
+					pageHint: page.trim() || undefined,
+					existingDraft: text,
+				},
+			})
+		}
+		if (text.trim()) {
+			Alert.alert(ocrCopy.existingDraftTitle, ocrCopy.existingDraftMessage, [
+				{ text: appCopy.cancel, style: 'cancel' },
+				{ text: ocrCopy.continueScan, onPress: startScan },
+			])
+			return
+		}
+		startScan()
+	}
 
 	const locationFields = useMemo(() => {
 		if (!item) {
@@ -275,15 +334,22 @@ export default function NewNoteScreen () {
 				/>
 				{error ? <Text style={styles.error}>{error}</Text> : null}
 
+				{canScanQuote ? (
+					<SecondaryButton
+						label={ocrCopy.scanTextAction}
+						onPress={handleOpenOcr}
+					/>
+				) : null}
+				{canScanQuote ? (
+					<Text style={styles.privacy}>{ocrCopy.privacy}</Text>
+				) : null}
+
 				<Text style={styles.section}>{diaryCopy.locationSection}</Text>
 				{locationFields}
 
 				{sessionId ? (
 					<Text style={styles.sessionHint}>{diaryCopy.linkedSession}</Text>
 				) : null}
-
-				{/* Reserved slot for future OCR: «Сканировать текст» */}
-				<View style={styles.ocrSlot} />
 
 				<PrimaryButton
 					label={appCopy.save}
@@ -332,14 +398,15 @@ const styles = StyleSheet.create({
 		...typography.bodySmall,
 		color: colors.primaryDark,
 	},
+	privacy: {
+		...typography.bodySmall,
+		color: colors.muted,
+	},
 	row: {
 		flexDirection: 'row',
 		gap: spacing.sm,
 	},
 	flex: {
 		flex: 1,
-	},
-	ocrSlot: {
-		height: 0,
 	},
 })
