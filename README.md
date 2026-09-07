@@ -161,7 +161,8 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 6 — Calendar / streak / goals** (complete). Phase 7 (statistics) is next.
+**Phase 7 — Statistics** (complete). Phase 8 (Year in Books) is next.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
-when the network is unavailable.
+when the network is unavailable. Statistics are computed locally from sessions,
+progress events, and library history — no network required.

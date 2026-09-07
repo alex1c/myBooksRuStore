@@ -4,9 +4,10 @@
  * Session activity day = local day of session.startedAt
  * (documented midnight rule: overnight sessions count on the start day).
  *
- * Progress events (QUICK/MANUAL/UNDO/FINISH) contribute progress deltas;
- * SESSION_END is excluded from activity-day detection (session already counts)
- * but IS included in page-goal deltas (single source of truth for pages).
+ * Progress events (QUICK/MANUAL/SESSION_END/UNDO/FINISH) contribute page /
+ * percent / audio nets so calendar day pages match getPageDeltaInRange and
+ * goals (single source of truth). Session wall-clock minutes still attribute
+ * only via startedAt — SESSION_END does not invent a second session day.
  */
 
 import type { ProgressEventType } from '@/db/types'
@@ -216,17 +217,13 @@ export async function getActivityForRange (
 			addTitle(day, row.title)
 		}
 
-		// Page / percent / audio nets (including UNDO negatives).
-		// SESSION_END pages count for goals via getPageProgressInRange;
-		// for activity day we skip SESSION_END so overnight session is not
-		// double-counted on endedAt day when startedAt already counted.
-		if (type === 'SESSION_END') {
-			continue
-		}
-
+		// Include SESSION_END in page/percent/audio nets so calendar day
+		// pages match getPageDeltaInRange / goals (single source of truth).
+		// Session wall-clock minutes still attribute only via startedAt.
 		if (
 			type === 'QUICK_UPDATE' ||
 			type === 'MANUAL_UPDATE' ||
+			type === 'SESSION_END' ||
 			type === 'UNDO' ||
 			type === 'FINISH_BOOK'
 		) {
