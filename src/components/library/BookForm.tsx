@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Pressable,
 	StyleSheet,
@@ -42,7 +42,7 @@ import {
 	validateRating,
 	validateTitle,
 } from '@/domain/libraryValidation'
-import { toDateOnlyLocal } from '@/utils/dates'
+import { formatDateShortRu, isDateOnly, toDateOnlyLocal } from '@/utils/dates'
 import {
 	hoursMinutesToSeconds,
 	secondsToHoursMinutes,
@@ -373,6 +373,7 @@ interface BookFormProps {
 	submitLabel: string
 	onSubmit: (data: ParsedBookForm) => Promise<void> | void
 	onCancel?: () => void
+	onDirtyChange?: (dirty: boolean) => void
 }
 
 /**
@@ -384,11 +385,17 @@ export function BookForm ({
 	submitLabel,
 	onSubmit,
 	onCancel,
+	onDirtyChange,
 }: BookFormProps) {
 	const [values, setValues] = useState<BookFormValues>(initial)
 	const [showMore, setShowMore] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [saving, setSaving] = useState(false)
+	const initialSnapshot = useRef(JSON.stringify(initial))
+
+	useEffect(() => {
+		onDirtyChange?.(JSON.stringify(values) !== initialSnapshot.current)
+	}, [values, onDirtyChange])
 
 	const formatOptions = useMemo(
 		() => BOOK_FORMATS.map((value) => ({ value, label: formatLabels[value] })),
@@ -621,13 +628,21 @@ export function BookForm ({
 						}
 					/>
 					{values.finishedChoice === 'date' ? (
-						<TextField
-							label={addBookCopy.finishedDateLabel}
-							value={values.finishedOn}
-							onChangeText={(finishedOn) => patch({ finishedOn })}
-							placeholder="YYYY-MM-DD"
-							autoCapitalize="none"
-						/>
+						<View style={styles.block}>
+							<TextField
+								label={addBookCopy.finishedDateLabel}
+								value={values.finishedOn}
+								onChangeText={(finishedOn) => patch({ finishedOn })}
+								placeholder="YYYY-MM-DD"
+								keyboardType="numbers-and-punctuation"
+								autoCapitalize="none"
+							/>
+							{isDateOnly(values.finishedOn) ? (
+								<Text style={styles.hint}>
+									{formatDateShortRu(values.finishedOn)}
+								</Text>
+							) : null}
+						</View>
 					) : null}
 					{values.finishedChoice === 'year' ? (
 						<TextField
@@ -801,6 +816,11 @@ const styles = StyleSheet.create({
 	multiline: {
 		minHeight: 96,
 		textAlignVertical: 'top',
+	},
+	hint: {
+		...typography.caption,
+		color: colors.muted,
+		marginTop: -spacing.xs,
 	},
 	wrap: {
 		flexDirection: 'row',

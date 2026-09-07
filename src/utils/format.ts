@@ -38,7 +38,7 @@ export function formatStatsDuration (totalSeconds: number): string {
 
 type PluralForms = [one: string, few: string, many: string]
 
-function pluralRu (n: number, forms: PluralForms): string {
+export function pluralRu (n: number, forms: PluralForms): string {
 	const abs = Math.abs(Math.trunc(n)) % 100
 	const last = abs % 10
 	if (abs > 10 && abs < 20) {
@@ -69,10 +69,50 @@ export function formatSessionsCount (n: number): string {
 	return `${formatIntegerRu(n)} ${pluralRu(n, ['сессия', 'сессии', 'сессий'])}`
 }
 
+export function formatQuotesCount (n: number): string {
+	return `${formatIntegerRu(n)} ${pluralRu(n, ['цитата', 'цитаты', 'цитат'])}`
+}
+
+export function formatThoughtsCount (n: number): string {
+	return `${formatIntegerRu(n)} ${pluralRu(n, ['мысль', 'мысли', 'мыслей'])}`
+}
+
+export function formatNotesCount (n: number): string {
+	return `${formatIntegerRu(n)} ${pluralRu(n, ['заметка', 'заметки', 'заметок'])}`
+}
+
+export function formatMinutesCount (n: number): string {
+	return `${formatIntegerRu(n)} ${pluralRu(n, ['минута', 'минуты', 'минут'])}`
+}
+
 /** Whole hours for Year in Books highlights: `186 часов`. */
 export function formatHoursCount (totalSeconds: number): string {
 	const hours = Math.floor(Math.max(0, totalSeconds) / 3600)
 	return `${formatIntegerRu(hours)} ${pluralRu(hours, ['час', 'часа', 'часов'])}`
 }
 
-export { pluralRu }
+/**
+ * Compact note-type counts line with correct Russian plurals.
+ */
+export function formatNoteTypeCounts (
+	quotes: number,
+	thoughts: number,
+	notes: number,
+): string {
+	return `${formatQuotesCount(quotes)} · ${formatThoughtsCount(thoughts)} · ${formatNotesCount(notes)}`
+}
+
+/**
+ * Hide Start reading CTAs while an active session banner owns that action.
+ */
+export function shouldShowStartReadingCta (hasActiveSession: boolean): boolean {
+	return !hasActiveSession
+}
+
+export function startReadingCtaLabel (input: {
+	isActiveBook: boolean
+	startLabel: string
+	continueLabel: string
+}): string {
+	return input.isActiveBook ? input.continueLabel : input.startLabel
+}

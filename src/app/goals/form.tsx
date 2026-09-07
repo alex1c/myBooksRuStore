@@ -18,6 +18,7 @@ import {
 	findSimilarActiveGoal,
 } from '@/domain/goalsService'
 import { getReadingGoalById } from '@/db/repositories/readingGoals'
+import { useDirtyFormGuard } from '@/hooks/useDirtyFormGuard'
 
 const TYPES: { key: GoalType; label: string }[] = [
 	{ key: 'PAGES', label: statsCopy.goalPages },
@@ -65,9 +66,16 @@ export default function GoalFormScreen () {
 	const [error, setError] = useState<string | null>(null)
 	const [saving, setSaving] = useState(false)
 	const [loadedEdit, setLoadedEdit] = useState(!id)
+	const [baseline, setBaseline] = useState(
+		() => `${defaults.type}|${defaults.period}|${defaults.target}`,
+	)
+	const dirty =
+		`${type}|${period}|${target}` !== baseline && loadedEdit
+	useDirtyFormGuard({ dirty, saving })
 
 	const loadEdit = useCallback(async () => {
 		if (!id) {
+			setBaseline(`${defaults.type}|${defaults.period}|${defaults.target}`)
 			setLoadedEdit(true)
 			return
 		}
@@ -76,9 +84,10 @@ export default function GoalFormScreen () {
 			setType(goal.type)
 			setPeriod(goal.period)
 			setTarget(String(goal.targetValue))
+			setBaseline(`${goal.type}|${goal.period}|${goal.targetValue}`)
 		}
 		setLoadedEdit(true)
-	}, [executor, id])
+	}, [executor, id, defaults])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -131,6 +140,7 @@ export default function GoalFormScreen () {
 					targetValue: value,
 				})
 			}
+			setBaseline(`${type}|${period}|${value}`)
 			router.back()
 		} catch (err) {
 			const message =

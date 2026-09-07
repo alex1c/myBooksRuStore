@@ -1,6 +1,6 @@
-import { router, Stack, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useCallback, useState } from 'react'
+import { StyleSheet, Text, TextInput, View } from 'react-native'
 
 import { NoteTypeChips } from '@/components/notes/NoteTypeChips'
 import {
@@ -20,6 +20,7 @@ import {
 	updateNote,
 	type NoteWithBook,
 } from '@/domain/diaryService'
+import { useDirtyFormGuard } from '@/hooks/useDirtyFormGuard'
 import {
 	hoursMinutesToSeconds,
 	secondsToHoursMinutes,
@@ -31,7 +32,6 @@ import {
 export default function EditNoteScreen () {
 	const { id } = useLocalSearchParams<{ id: string }>()
 	const { executor } = useDatabase()
-	const navigation = useNavigation()
 	const [bundle, setBundle] = useState<NoteWithBook | null>(null)
 	const [type, setType] = useState<NoteType>('NOTE')
 	const [text, setText] = useState('')
@@ -43,6 +43,8 @@ export default function EditNoteScreen () {
 	const [saving, setSaving] = useState(false)
 	const [dirty, setDirty] = useState(false)
 	const [loading, setLoading] = useState(true)
+
+	useDirtyFormGuard({ dirty, saving })
 
 	const load = useCallback(async () => {
 		if (!id) {
@@ -79,27 +81,6 @@ export default function EditNoteScreen () {
 			void load()
 		}, [load]),
 	)
-
-	useEffect(() => {
-		const unsubscribe = navigation.addListener('beforeRemove', (event: {
-			preventDefault: () => void
-			data: { action: unknown }
-		}) => {
-			if (!dirty || saving) {
-				return
-			}
-			event.preventDefault()
-			Alert.alert(diaryCopy.dirtyTitle, undefined, [
-				{
-					text: diaryCopy.dirtyDiscard,
-					style: 'destructive',
-					onPress: () => navigation.dispatch(event.data.action as never),
-				},
-				{ text: diaryCopy.dirtyKeep, style: 'cancel' },
-			])
-		})
-		return unsubscribe
-	}, [navigation, dirty, saving])
 
 	const handleSave = async () => {
 		if (!bundle) {

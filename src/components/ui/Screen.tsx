@@ -25,7 +25,7 @@ interface ScreenProps {
 
 /**
  * Standard screen shell with safe-area padding and calm background.
- * KeyboardAvoiding + ScrollView are ready for future forms.
+ * Forms should pass scroll + keyboardAvoiding together.
  */
 export function Screen ({
 	children,
@@ -39,6 +39,7 @@ export function Screen ({
 		<ScrollView
 			contentContainerStyle={[styles.content, contentStyle]}
 			keyboardShouldPersistTaps="handled"
+			keyboardDismissMode="on-drag"
 			showsVerticalScrollIndicator={false}
 		>
 			{children}
@@ -50,8 +51,8 @@ export function Screen ({
 	const wrapped = keyboardAvoiding ? (
 		<KeyboardAvoidingView
 			style={styles.flex}
-			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-			keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+			keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
 		>
 			{body}
 		</KeyboardAvoidingView>

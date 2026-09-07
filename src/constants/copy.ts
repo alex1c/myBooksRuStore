@@ -10,15 +10,17 @@ export const appCopy = {
 	bootstrapErrorMessage:
 		'Локальная база данных не инициализировалась. Попробуйте ещё раз.',
 	retry: 'Повторить',
-	comingSoonTitle: 'Скоро',
-	comingSoonMessage: 'Эта функция появится в следующих обновлениях.',
+	errorTitle: 'Ошибка',
+	close: 'Закрыть',
 	save: 'Сохранить',
+	saving: 'Сохраняем…',
 	cancel: 'Отмена',
 	edit: 'Изменить',
 	delete: 'Удалить',
 	archive: 'Архивировать',
 	restore: 'Восстановить',
 	authorUnknown: 'Автор не указан',
+	bookNotFound: 'Книга не найдена',
 } as const
 
 export const tabsCopy = {
@@ -38,8 +40,8 @@ export const todayCopy = {
 	addBook: 'Добавить книгу',
 	readingSection: 'Читаю сейчас',
 	startReading: 'Начать чтение',
-	continueSession: 'Продолжить чтение',
-	activeSessionBanner: 'Незавершённая сессия',
+	activeSessionBanner: 'Сейчас читаете',
+	continueSession: 'Продолжить',
 	setExact: 'Указать',
 	progressUpdated: 'Прогресс обновлён',
 	undo: 'Отменить',
@@ -112,6 +114,8 @@ export const libraryCopy = {
 	searchPlaceholder: 'Поиск по книгам и авторам',
 	filterEmpty: (statusLabel: string) =>
 		`В разделе «${statusLabel}» пока нет книг.`,
+	resetFilters: 'Сбросить фильтр',
+	clearSearch: 'Очистить поиск',
 	sort: 'Сортировка',
 	shelves: 'Полки',
 	countsReading: 'Читаю',

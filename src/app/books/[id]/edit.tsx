@@ -17,6 +17,7 @@ import {
 	updateLibraryBook,
 } from '@/domain/libraryService'
 import type { LibraryBookItem, Shelf } from '@/db/types'
+import { useDirtyFormGuard } from '@/hooks/useDirtyFormGuard'
 
 /**
  * Edit book + library entry fields and shelf membership.
@@ -27,6 +28,10 @@ export default function EditBookScreen () {
 	const [item, setItem] = useState<LibraryBookItem | null>(null)
 	const [shelves, setShelves] = useState<Shelf[]>([])
 	const [loading, setLoading] = useState(true)
+	const [dirty, setDirty] = useState(false)
+	const [saving, setSaving] = useState(false)
+
+	useDirtyFormGuard({ dirty, saving })
 
 	useFocusEffect(
 		useCallback(() => {
@@ -44,6 +49,7 @@ export default function EditBookScreen () {
 					if (!cancelled) {
 						setItem(next)
 						setShelves(shelfRows)
+						setDirty(false)
 					}
 				} finally {
 					if (!cancelled) {
@@ -62,13 +68,19 @@ export default function EditBookScreen () {
 		if (!id) {
 			return
 		}
-		await updateLibraryBook(executor, {
-			entryId: id,
-			book: data.book,
-			entry: data.entry,
-			shelfIds: data.shelfIds,
-		})
-		router.back()
+		setSaving(true)
+		try {
+			await updateLibraryBook(executor, {
+				entryId: id,
+				book: data.book,
+				entry: data.entry,
+				shelfIds: data.shelfIds,
+			})
+			setDirty(false)
+			router.back()
+		} finally {
+			setSaving(false)
+		}
 	}
 
 	if (loading || !item) {
@@ -86,6 +98,7 @@ export default function EditBookScreen () {
 					submitLabel={addBookCopy.submitSave}
 					onSubmit={handleSubmit}
 					onCancel={() => router.back()}
+					onDirtyChange={setDirty}
 				/>
 			</Screen>
 		</>

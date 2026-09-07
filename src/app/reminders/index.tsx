@@ -10,7 +10,6 @@ import {
 	StyleSheet,
 	Switch,
 	Text,
-	TextInput,
 	View,
 } from 'react-native'
 
@@ -19,6 +18,7 @@ import {
 	Screen,
 	SecondaryButton,
 	SectionHeader,
+	TextField,
 } from '@/components/ui'
 import { remindersCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
@@ -219,17 +219,12 @@ export default function RemindersScreen () {
 						>
 							<Text style={styles.timeBtnText}>−15</Text>
 						</Pressable>
-						<TextInput
-							value={time}
-							onChangeText={(v) => {
-								setTime(v)
-								setStatusMessage(null)
-							}}
-							keyboardType="numbers-and-punctuation"
-							style={styles.timeInput}
-							accessibilityLabel={remindersCopy.timeLabel}
-							maxLength={5}
-						/>
+						<Text
+							style={styles.timeDisplay}
+							accessibilityLabel={`${remindersCopy.timeLabel}: ${time}`}
+						>
+							{time}
+						</Text>
 						<Pressable
 							onPress={() => adjustTime(15)}
 							accessibilityLabel={remindersCopy.timePlus}
@@ -238,6 +233,17 @@ export default function RemindersScreen () {
 							<Text style={styles.timeBtnText}>+15</Text>
 						</Pressable>
 					</View>
+					<TextField
+						label="Точное время (ЧЧ:ММ)"
+						value={time}
+						onChangeText={(v) => {
+							setTime(v)
+							setStatusMessage(null)
+						}}
+						keyboardType="numbers-and-punctuation"
+						maxLength={5}
+						accessibilityLabel={remindersCopy.timeLabel}
+					/>
 
 					<Text style={styles.section}>{remindersCopy.daysLabel}</Text>
 					<View style={styles.days}>
@@ -324,17 +330,13 @@ const styles = StyleSheet.create({
 		...typography.body,
 		color: colors.text,
 	},
-	timeInput: {
-		minWidth: 88,
+	timeDisplay: {
+		minWidth: 96,
 		textAlign: 'center',
-		borderWidth: 1,
-		borderColor: colors.border,
-		borderRadius: radii.md,
-		paddingVertical: spacing.sm,
-		paddingHorizontal: spacing.md,
-		...typography.section,
+		...typography.title,
+		fontSize: 32,
+		lineHeight: 38,
 		color: colors.text,
-		backgroundColor: colors.surface,
 	},
 	days: {
 		flexDirection: 'row',

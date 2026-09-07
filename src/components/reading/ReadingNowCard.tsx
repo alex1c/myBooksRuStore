@@ -21,6 +21,9 @@ interface ReadingNowCardProps {
 	onQuick: (kind: 'pages' | 'percent' | 'minutes', delta: number) => void
 	onExact: () => void
 	busy?: boolean
+	/** When false, hide Start/Continue to avoid competing with active session banner. */
+	showStartReading?: boolean
+	startLabel?: string
 }
 
 function buildChips (
@@ -63,6 +66,8 @@ export function ReadingNowCard ({
 	onQuick,
 	onExact,
 	busy = false,
+	showStartReading = true,
+	startLabel = todayCopy.startReading,
 }: ReadingNowCardProps) {
 	const { book, entry } = item
 	const author = book.authorText.trim() || appCopy.authorUnknown
@@ -121,11 +126,13 @@ export function ReadingNowCard ({
 				))}
 			</View>
 
-			<PrimaryButton
-				label={todayCopy.startReading}
-				onPress={onStartReading}
-				disabled={busy}
-			/>
+			{showStartReading ? (
+				<PrimaryButton
+					label={startLabel}
+					onPress={onStartReading}
+					disabled={busy}
+				/>
+			) : null}
 		</View>
 	)
 }
@@ -137,12 +144,14 @@ export function QuickProgressRow ({
 	onExact,
 	onStartReading,
 	busy = false,
+	startLabel = todayCopy.startReading,
 }: {
 	entry: LibraryEntry
 	onQuick: ReadingNowCardProps['onQuick']
 	onExact: () => void
 	onStartReading?: () => void
 	busy?: boolean
+	startLabel?: string
 }) {
 	const chips = buildChips(entry, onQuick, onExact)
 	return (
@@ -152,6 +161,7 @@ export function QuickProgressRow ({
 					<Pressable
 						key={chip.label}
 						accessibilityRole="button"
+						accessibilityLabel={chip.label}
 						disabled={busy}
 						onPress={chip.onPress}
 						style={({ pressed }) => [
@@ -165,7 +175,7 @@ export function QuickProgressRow ({
 			</View>
 			{onStartReading ? (
 				<PrimaryButton
-					label={todayCopy.startReading}
+					label={startLabel}
 					onPress={onStartReading}
 					disabled={busy}
 				/>
@@ -241,7 +251,7 @@ const styles = StyleSheet.create({
 		backgroundColor: colors.surfaceMuted,
 		borderWidth: StyleSheet.hairlineWidth,
 		borderColor: colors.border,
-		minHeight: 36,
+		minHeight: 44,
 		justifyContent: 'center',
 	},
 	chipPressed: {

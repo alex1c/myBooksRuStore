@@ -41,3 +41,31 @@ export function toDateOnlyLocal (date: Date = new Date()): string {
 	const day = String(date.getDate()).padStart(2, '0')
 	return `${year}-${month}-${day}`
 }
+
+/**
+ * User-facing Russian date from YYYY-MM-DD (e.g. `7 сентября 2026`).
+ * Returns the original string if parsing fails.
+ */
+export function formatDateRu (dateOnly: string): string {
+	if (!isDateOnly(dateOnly)) {
+		return dateOnly
+	}
+	const [year, month, day] = dateOnly.split('-').map(Number)
+	const date = new Date(year!, month! - 1, day!)
+	return date.toLocaleDateString('ru-RU', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	})
+}
+
+/**
+ * Compact form helper label: `07.09.2026` for picker fields.
+ */
+export function formatDateShortRu (dateOnly: string): string {
+	if (!isDateOnly(dateOnly)) {
+		return dateOnly
+	}
+	const [year, month, day] = dateOnly.split('-')
+	return `${day}.${month}.${year}`
+}

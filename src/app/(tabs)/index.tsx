@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { ExactProgressModal } from '@/components/reading/ExactProgressModal'
@@ -11,7 +11,7 @@ import {
 	Screen,
 	SectionHeader,
 } from '@/components/ui'
-import { sessionCopy, todayCopy, statsCopy } from '@/constants/copy'
+import { appCopy, sessionCopy, todayCopy, statsCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import { listReadingNow } from '@/domain/libraryService'
@@ -33,6 +33,9 @@ import {
 	type QuickDelta,
 } from '@/domain/readingTrackerService'
 import type { LibraryBookItem } from '@/db/types'
+import {
+	shouldShowStartReadingCta,
+} from '@/utils/format'
 import { formatSessionTimer } from '@/utils/sessionTimer'
 
 /**
@@ -133,7 +136,7 @@ export default function TodayScreen () {
 		} catch (error) {
 			const message =
 				error instanceof Error ? error.message : 'Не удалось обновить прогресс'
-			Alert.alert('Ошибка', message.replace(/^INVALID_PROGRESS:/, ''))
+			Alert.alert(appCopy.errorTitle, message.replace(/^INVALID_PROGRESS:/, ''))
 		} finally {
 			setBusy(false)
 		}
@@ -192,7 +195,7 @@ export default function TodayScreen () {
 			} else if (code === 'AUDIO_EXCEEDS_DURATION') {
 				setExactError('Позиция больше длительности')
 			} else {
-				setExactError(code.replace(/^INVALID_PROGRESS:/, '') || 'Ошибка')
+				setExactError(code.replace(/^INVALID_PROGRESS:/, '') || appCopy.errorTitle)
 			}
 		} finally {
 			setBusy(false)
@@ -202,6 +205,13 @@ export default function TodayScreen () {
 	const handleStart = async (item: LibraryBookItem) => {
 		setBusy(true)
 		try {
+			if (
+				active &&
+				active.session.libraryEntryId === item.entry.id
+			) {
+				router.push('/sessions/active')
+				return
+			}
 			const bundle = await startReadingSession(executor, item.entry.id)
 			setActive(bundle)
 			router.push('/sessions/active')
@@ -224,13 +234,13 @@ export default function TodayScreen () {
 									params: { sessionId: error.activeSession.id },
 								}),
 						},
-						{ text: 'Закрыть', style: 'cancel' },
+						{ text: appCopy.close, style: 'cancel' },
 					],
 				)
 				return
 			}
 			Alert.alert(
-				'Ошибка',
+				appCopy.errorTitle,
 				error instanceof Error ? error.message : 'Не удалось начать сессию',
 			)
 		} finally {
@@ -240,13 +250,14 @@ export default function TodayScreen () {
 
 	const exactItem = items.find((row) => row.entry.id === exactEntryId) ?? null
 
-	return (
-		<Screen contentStyle={styles.content}>
+	const listHeader = useMemo(() => (
+		<View>
 			<SectionHeader title={todayCopy.title} />
 
 			{active ? (
 				<Pressable
 					accessibilityRole="button"
+					accessibilityLabel={`${todayCopy.activeSessionBanner}: ${active.item.book.title}`}
 					onPress={() => router.push('/sessions/active')}
 					style={styles.banner}
 				>
@@ -268,19 +279,21 @@ export default function TodayScreen () {
 			{motivationGoals.length > 0 || (streak && streak.current > 0) ? (
 				<View style={styles.motivation}>
 					{streak && streak.current > 0 ? (
-						<Text style={styles.motivationStreak}>
+						<Text style={styles.motivationStreak} numberOfLines={1}>
 							{statsCopy.streakCurrent(streak.current)}
 							{streak.todayPending
 								? ` · ${statsCopy.streakContinue}`
 								: ''}
 						</Text>
 					) : null}
-					{motivationGoals.map((goal) => (
+					{motivationGoals.slice(0, 2).map((goal) => (
 						<Pressable
 							key={goal.goal.id}
 							onPress={() => router.push('/(tabs)/stats')}
+							accessibilityRole="button"
+							accessibilityLabel={goalTitle(goal.goal)}
 						>
-							<Text style={styles.motivationGoal}>
+							<Text style={styles.motivationGoal} numberOfLines={1}>
 								{goalTitle(goal.goal)} · {goal.summary}
 							</Text>
 							<View style={styles.miniBar}>
@@ -298,14 +311,26 @@ export default function TodayScreen () {
 				<Pressable
 					onPress={() => router.push('/goals/form')}
 					style={styles.setGoal}
+					accessibilityRole="button"
+					accessibilityLabel={todayCopy.setGoal}
 				>
 					<Text style={styles.setGoalLabel}>{todayCopy.setGoal}</Text>
 				</Pressable>
 			)}
 
+			{items.length > 0 ? (
+				<SectionHeader title={todayCopy.readingSection} />
+			) : null}
+		</View>
+	), [active, motivationGoals, streak, items.length])
+
+	return (
+		<Screen contentStyle={styles.content}>
 			{loading && items.length === 0 ? <LoadingState /> : null}
+
 			{!loading && items.length === 0 ? (
 				<View style={styles.empty}>
+					{listHeader}
 					<EmptyState
 						icon="sunny-outline"
 						title={todayCopy.emptyTitle}
@@ -319,16 +344,19 @@ export default function TodayScreen () {
 			) : null}
 
 			{items.length > 0 ? (
-				<>
-					<SectionHeader title={todayCopy.readingSection} />
-					<FlatList
-						data={items}
-						keyExtractor={(item) => item.entry.id}
-						renderItem={({ item, index }) => (
+				<FlatList
+					data={items}
+					keyExtractor={(item) => item.entry.id}
+					ListHeaderComponent={listHeader}
+					renderItem={({ item, index }) => {
+						const showStart = shouldShowStartReadingCta(Boolean(active))
+						return (
 							<ReadingNowCard
 								item={item}
-								highlighted={index === 0}
+								highlighted={index === 0 && !active}
 								busy={busy}
+								showStartReading={showStart}
+								startLabel={todayCopy.startReading}
 								onOpen={() => router.push(`/books/${item.entry.id}`)}
 								onStartReading={() => void handleStart(item)}
 								onQuick={(kind, delta) => void handleQuick(item, kind, delta)}
@@ -337,11 +365,13 @@ export default function TodayScreen () {
 									setExactEntryId(item.entry.id)
 								}}
 							/>
-						)}
-						contentContainerStyle={styles.list}
-						showsVerticalScrollIndicator={false}
-					/>
-				</>
+						)
+					}}
+					contentContainerStyle={styles.list}
+					showsVerticalScrollIndicator={false}
+					initialNumToRender={8}
+					windowSize={7}
+				/>
 			) : null}
 
 			{exactItem ? (
@@ -386,8 +416,7 @@ const styles = StyleSheet.create({
 	},
 	empty: {
 		flex: 1,
-		justifyContent: 'center',
-		paddingVertical: spacing.xl,
+		paddingVertical: spacing.md,
 	},
 	list: {
 		paddingBottom: spacing.xxl,
@@ -398,7 +427,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: colors.primary,
 		padding: spacing.md,
-		marginBottom: spacing.md,
+		marginBottom: spacing.sm,
 	},
 	bannerText: {
 		gap: 2,
@@ -418,9 +447,10 @@ const styles = StyleSheet.create({
 		color: colors.primaryDark,
 	},
 	motivation: {
-		gap: spacing.xs,
-		marginBottom: spacing.md,
-		padding: spacing.sm,
+		gap: spacing.xxs,
+		marginBottom: spacing.sm,
+		paddingVertical: spacing.xs,
+		paddingHorizontal: spacing.sm,
 		backgroundColor: colors.surface,
 		borderRadius: radii.md,
 		borderWidth: StyleSheet.hairlineWidth,
@@ -432,23 +462,23 @@ const styles = StyleSheet.create({
 		color: colors.primaryDark,
 	},
 	motivationGoal: {
-		...typography.bodySmall,
+		...typography.caption,
 		color: colors.text,
 	},
 	miniBar: {
-		height: 5,
+		height: 4,
 		borderRadius: radii.full,
 		backgroundColor: colors.surfaceMuted,
 		overflow: 'hidden',
-		marginTop: 4,
-		marginBottom: spacing.xs,
+		marginTop: 2,
+		marginBottom: spacing.xxs,
 	},
 	miniFill: {
 		height: '100%',
 		backgroundColor: colors.primary,
 	},
 	setGoal: {
-		marginBottom: spacing.md,
+		marginBottom: spacing.sm,
 		alignSelf: 'flex-start',
 	},
 	setGoalLabel: {

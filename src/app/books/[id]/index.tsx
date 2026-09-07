@@ -1,5 +1,5 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Alert, StyleSheet, Text, View } from 'react-native'
 
 import { CoverThumbnail } from '@/components/library/CoverThumbnail'
@@ -8,6 +8,7 @@ import { QuickProgressRow } from '@/components/reading/ReadingNowCard'
 import { UndoSnackbar } from '@/components/reading/UndoSnackbar'
 import {
 	Card,
+	DestructiveButton,
 	LoadingState,
 	PrimaryButton,
 	Screen,
@@ -44,6 +45,8 @@ import {
 } from '@/domain/readingTrackerService'
 import type { LibraryBookItem, ReadingNote, ReadingSession, Shelf } from '@/db/types'
 import { formatProgressLabel, progressRatio } from '@/utils/progress'
+import { formatDateRu } from '@/utils/dates'
+import { formatNoteTypeCounts } from '@/utils/format'
 import { NoteCard } from '@/components/notes/NoteCard'
 import { getActiveSession } from '@/db/repositories/readingSessions'
 import {
@@ -73,6 +76,15 @@ export default function BookDetailsScreen () {
 	const [snack, setSnack] = useState<{ message: string; eventId: string } | null>(
 		null,
 	)
+	const snackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+	const showSnack = (message: string, eventId: string) => {
+		if (snackTimer.current) {
+			clearTimeout(snackTimer.current)
+		}
+		setSnack({ message, eventId })
+		snackTimer.current = setTimeout(() => setSnack(null), 5000)
+	}
 
 	const load = useCallback(async () => {
 		if (!id) {
@@ -159,17 +171,17 @@ export default function BookDetailsScreen () {
 						: { kind: 'minutes', delta }
 			const result = await applyQuickProgress(executor, item.entry.id, payload)
 			setItem(result.item)
-			setSnack({
-				message: `${todayCopy.progressUpdated} · ${result.feedbackLabel}`,
-				eventId: result.event.id,
-			})
+			showSnack(
+				`${todayCopy.progressUpdated} · ${result.feedbackLabel}`,
+				result.event.id,
+			)
 			offerCompletion(result.item)
 		} catch (error) {
 			Alert.alert(
-				'Ошибка',
+				appCopy.errorTitle,
 				error instanceof Error
 					? error.message.replace(/^INVALID_PROGRESS:/, '')
-					: 'Ошибка',
+					: appCopy.errorTitle,
 			)
 		} finally {
 			setBusy(false)
@@ -199,14 +211,14 @@ export default function BookDetailsScreen () {
 			const result = await applyQuickProgress(executor, item.entry.id, delta)
 			setExactOpen(false)
 			setItem(result.item)
-			setSnack({
-				message: `${todayCopy.progressUpdated} · ${result.feedbackLabel}`,
-				eventId: result.event.id,
-			})
+			showSnack(
+				`${todayCopy.progressUpdated} · ${result.feedbackLabel}`,
+				result.event.id,
+			)
 			offerCompletion(result.item)
 		} catch (error) {
 			const code = error instanceof Error ? error.message : ''
-			setExactError(code.replace(/^INVALID_PROGRESS:/, '') || 'Ошибка')
+			setExactError(code.replace(/^INVALID_PROGRESS:/, '') || appCopy.errorTitle)
 		} finally {
 			setBusy(false)
 		}
@@ -280,7 +292,7 @@ export default function BookDetailsScreen () {
 	if (!item) {
 		return (
 			<Screen>
-				<Text style={styles.missing}>Книга не найдена</Text>
+				<Text style={styles.missing}>{appCopy.bookNotFound}</Text>
 			</Screen>
 		)
 	}
@@ -298,7 +310,7 @@ export default function BookDetailsScreen () {
 			return null
 		}
 		if (e.finishedDatePrecision === 'EXACT' && e.finishedOn) {
-			return e.finishedOn
+			return formatDateRu(e.finishedOn)
 		}
 		if (e.finishedDatePrecision === 'YEAR' && e.finishedYear != null) {
 			return String(e.finishedYear)
@@ -327,11 +339,11 @@ export default function BookDetailsScreen () {
 						size={88}
 					/>
 					<View style={styles.heroText}>
-						<Text style={styles.title}>{item.book.title}</Text>
+						<Text style={styles.title} numberOfLines={3}>{item.book.title}</Text>
 						{item.book.subtitle ? (
-							<Text style={styles.subtitle}>{item.book.subtitle}</Text>
+							<Text style={styles.subtitle} numberOfLines={2}>{item.book.subtitle}</Text>
 						) : null}
-						<Text style={styles.author}>{author}</Text>
+						<Text style={styles.author} numberOfLines={2}>{author}</Text>
 						<Text style={styles.meta}>
 							{statusLabels[item.entry.status]} · {formatLabels[item.entry.format]}
 						</Text>
@@ -425,7 +437,7 @@ export default function BookDetailsScreen () {
 					<Text style={styles.section}>{bookDetailsCopy.notes}</Text>
 					{noteCounts.total > 0 ? (
 						<Text style={styles.muted}>
-							{diaryCopy.counts(
+							{formatNoteTypeCounts(
 								noteCounts.QUOTE,
 								noteCounts.THOUGHT,
 								noteCounts.NOTE,
@@ -572,11 +584,11 @@ export default function BookDetailsScreen () {
 					</Card>
 				) : null}
 
-				<PrimaryButton
+				<SecondaryButton
 					label={appCopy.edit}
 					onPress={() => router.push(`/books/${item.entry.id}/edit`)}
 				/>
-				<SecondaryButton label={appCopy.archive} onPress={handleArchive} />
+				<DestructiveButton label={appCopy.archive} onPress={handleArchive} />
 			</Screen>
 
 			{exactOpen ? (

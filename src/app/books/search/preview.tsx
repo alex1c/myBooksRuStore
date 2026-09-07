@@ -124,12 +124,11 @@ export default function SearchPreviewScreen () {
 		try {
 			setSaving(true)
 			const created = await addExternalBookToLibrary(executor, draft)
-			Alert.alert(searchCopy.addedToast)
 			router.replace(`/books/${created.entry.id}`)
 		} catch (error) {
 			Alert.alert(
-				appCopy.name,
-				error instanceof Error ? error.message : 'save_failed',
+				appCopy.errorTitle,
+				error instanceof Error ? error.message : 'Не удалось сохранить книгу',
 			)
 		} finally {
 			setSaving(false)

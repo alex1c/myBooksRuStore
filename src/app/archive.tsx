@@ -1,10 +1,11 @@
 import { router, Stack, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
-import { Alert, FlatList, StyleSheet, View } from 'react-native'
+import { FlatList, StyleSheet, View } from 'react-native'
 
 import { LibraryBookCard } from '@/components/library/LibraryBookCard'
 import {
 	EmptyState,
+	FeedbackSnackbar,
 	LoadingState,
 	Screen,
 	SecondaryButton,
@@ -26,6 +27,7 @@ export default function ArchiveScreen () {
 	const { executor } = useDatabase()
 	const [items, setItems] = useState<LibraryBookItem[]>([])
 	const [loading, setLoading] = useState(true)
+	const [snack, setSnack] = useState<string | null>(null)
 
 	const load = useCallback(async () => {
 		setLoading(true)
@@ -49,7 +51,7 @@ export default function ArchiveScreen () {
 	const handleRestore = (entryId: string) => {
 		void (async () => {
 			await restoreLibraryBook(executor, entryId)
-			Alert.alert(archiveCopy.restored)
+			setSnack(archiveCopy.restored)
 			await load()
 		})()
 	}
@@ -85,8 +87,15 @@ export default function ArchiveScreen () {
 						</View>
 					)}
 					contentContainerStyle={styles.list}
-					showsVerticalScrollIndicator={false}
 				/>
+				{snack ? (
+					<View style={styles.snackWrap}>
+						<FeedbackSnackbar
+							message={snack}
+							onDismiss={() => setSnack(null)}
+						/>
+					</View>
+				) : null}
 			</Screen>
 		</>
 	)
@@ -102,11 +111,16 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 	},
 	list: {
-		paddingBottom: spacing.xl,
-		gap: spacing.sm,
+		paddingBottom: spacing.xxl,
 	},
 	row: {
 		gap: spacing.xs,
 		marginBottom: spacing.sm,
+	},
+	snackWrap: {
+		position: 'absolute',
+		left: spacing.md,
+		right: spacing.md,
+		bottom: spacing.lg,
 	},
 })

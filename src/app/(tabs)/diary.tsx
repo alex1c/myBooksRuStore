@@ -1,11 +1,10 @@
 import { router, useFocusEffect } from 'expo-router'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
 	Pressable,
 	SectionList,
 	StyleSheet,
 	Text,
-	TextInput,
 	View,
 } from 'react-native'
 
@@ -14,6 +13,7 @@ import {
 	EmptyState,
 	LoadingState,
 	Screen,
+	SearchField,
 	SectionHeader,
 } from '@/components/ui'
 import { diaryCopy } from '@/constants/copy'
@@ -45,10 +45,17 @@ export default function DiaryScreen () {
 	const [books, setBooks] = useState<LibraryBookItem[]>([])
 	const [filter, setFilter] = useState<DiaryFilter>('ALL')
 	const [bookId, setBookId] = useState<string | null>(null)
+	const [searchInput, setSearchInput] = useState('')
 	const [search, setSearch] = useState('')
 	const [loading, setLoading] = useState(true)
 	const [hasMore, setHasMore] = useState(false)
 	const [offset, setOffset] = useState(0)
+
+	// Debounce diary search like the library (250ms).
+	useEffect(() => {
+		const timer = setTimeout(() => setSearch(searchInput), 250)
+		return () => clearTimeout(timer)
+	}, [searchInput])
 
 	const load = useCallback(
 		async (nextOffset = 0, append = false) => {
@@ -121,26 +128,27 @@ export default function DiaryScreen () {
 	}
 
 	const isEmpty = !loading && sections.every((s) => s.items.length === 0)
+	const hasFilters =
+		filter !== 'ALL' || bookId != null || searchInput.trim().length > 0
 
 	return (
 		<Screen contentStyle={styles.content}>
 			<SectionHeader title={diaryCopy.title} />
 
-			<TextInput
+			<SearchField
 				accessibilityLabel={diaryCopy.searchPlaceholder}
 				placeholder={diaryCopy.searchPlaceholder}
-				placeholderTextColor={colors.muted}
-				value={search}
-				onChangeText={(value) => {
-					setSearch(value)
-				}}
-				style={styles.search}
+				value={searchInput}
+				onChangeText={setSearchInput}
 			/>
 
 			<View style={styles.filters}>
 				{FILTERS.map((chip) => (
 					<Pressable
 						key={chip.key}
+						accessibilityRole="button"
+						accessibilityState={{ selected: filter === chip.key }}
+						accessibilityLabel={chip.label}
 						onPress={() => setFilter(chip.key)}
 						style={[
 							styles.chip,
@@ -161,6 +169,8 @@ export default function DiaryScreen () {
 
 			<View style={styles.bookFilterRow}>
 				<Pressable
+					accessibilityRole="button"
+					accessibilityState={{ selected: bookId == null }}
 					onPress={() => setBookId(null)}
 					style={[styles.chip, bookId == null ? styles.chipActive : null]}
 				>
@@ -176,6 +186,8 @@ export default function DiaryScreen () {
 				{books.slice(0, 8).map((book) => (
 					<Pressable
 						key={book.entry.id}
+						accessibilityRole="button"
+						accessibilityState={{ selected: bookId === book.entry.id }}
 						onPress={() => setBookId(book.entry.id)}
 						style={[
 							styles.chip,
@@ -201,10 +213,28 @@ export default function DiaryScreen () {
 				<View style={styles.empty}>
 					<EmptyState
 						icon="journal-outline"
-						title={diaryCopy.emptyTitle}
-						description={diaryCopy.emptyDescription}
-						actionLabel={diaryCopy.goToBooks}
-						onAction={() => router.push('/(tabs)/library')}
+						title={
+							hasFilters
+								? 'По выбранным фильтрам записей нет'
+								: diaryCopy.emptyTitle
+						}
+						description={
+							hasFilters
+								? 'Сбросьте фильтр или очистите поиск.'
+								: diaryCopy.emptyDescription
+						}
+						actionLabel={
+							hasFilters ? 'Сбросить фильтры' : diaryCopy.goToBooks
+						}
+						onAction={() => {
+							if (hasFilters) {
+								setFilter('ALL')
+								setBookId(null)
+								setSearchInput('')
+								return
+							}
+							router.push('/(tabs)/library')
+						}}
 					/>
 				</View>
 			) : (
@@ -217,6 +247,7 @@ export default function DiaryScreen () {
 					)}
 					stickySectionHeadersEnabled={false}
 					contentContainerStyle={styles.list}
+					keyboardShouldPersistTaps="handled"
 					onEndReached={() => {
 						if (hasMore && !loading) {
 							void load(offset + 80, true)
@@ -261,16 +292,7 @@ const styles = StyleSheet.create({
 	content: {
 		flex: 1,
 		paddingBottom: 0,
-	},
-	search: {
-		borderWidth: 1,
-		borderColor: colors.border,
-		borderRadius: radii.md,
-		paddingHorizontal: spacing.md,
-		paddingVertical: spacing.sm,
-		backgroundColor: colors.surface,
-		color: colors.text,
-		marginBottom: spacing.sm,
+		gap: spacing.xs,
 	},
 	filters: {
 		flexDirection: 'row',
@@ -290,9 +312,13 @@ const styles = StyleSheet.create({
 		borderRadius: radii.sm,
 		backgroundColor: colors.surfaceMuted,
 		maxWidth: 140,
+		minHeight: 40,
+		justifyContent: 'center',
 	},
 	chipActive: {
 		backgroundColor: colors.primarySoft,
+		borderWidth: 1,
+		borderColor: colors.primary,
 	},
 	chipLabel: {
 		...typography.caption,

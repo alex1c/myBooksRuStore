@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 12 — Reminders** ← DONE  
-**Phase 13 — UX polish** ← NEXT
+**Phase 13 — UX polish** ← DONE  
+**Phase 14 — AppMetrica + Yandex Ads** ← NEXT
 
 ## Phases
 
@@ -21,35 +21,22 @@
 | 10 | Mass import | **DONE** |
 | 11 | OCR quotes | **DONE** |
 | 12 | Notifications | **DONE** |
-| 13 | UX polish | Planned |
+| 13 | UX polish | **DONE** |
 | 14 | AppMetrica + Ads | Planned |
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 12 scope (DONE)
+## Phase 13 scope (DONE)
 
-- Local reading reminders via `expo-notifications` (no remote push / FCM / tokens)
-- Settings: Ещё → Напоминания — enable, HH:MM, weekdays (Пн…Вс)
-- Android channel `reading-reminders`, default importance
-- Permission only after explicit «Включить напоминания»; denied → settings / not now
-- Idempotent reschedule; generic calm copy; tap → Today
-- Privacy: schedules stay on-device
-- Requires custom native / EAS / prebuild (not Expo Go) for production verification
-
-## Phase 11 scope (DONE)
-
-- On-device quote OCR via `react-native-executorch` (`OCR_RUSSIAN`) — Cyrillic + Latin glyphs
-- Flow: capture → process → edit/preview → save QUOTE (never silent)
-- Entry: book details «Сканировать цитату», note editor «Сканировать текст»
-- Reuses `expo-camera` permissions; temp images cleaned; no cloud photo upload
-- First use may download the recognition model (photos/text stay local)
-- Active reading session continues (timestamp timer); no AUDIOBOOK OCR CTA
-- Requires custom native / EAS / prebuild (not Expo Go)
+- Shared form/search/feedback helpers (`SearchField`, `FeedbackSnackbar`, `DestructiveButton`, `useDirtyFormGuard`)
+- Today: single FlatList + header, compact goals, hide competing Start CTA during active session
+- Library/Diary: clearable search, filter empty recovery, diary debounce
+- Book details: Edit secondary, Archive destructive, Russian finished dates, note plurals
+- Dirty protection on book edit + notes; success feedback without blocking Alerts where practical
+- Stress fixtures (1000 books) for list/empty UX tests — not production seeding
 
 ## Explicitly deferred
 
-- UX polish / ads / AppMetrica
-- Cloud OCR / AI summaries
-- Perspective correction / document scanner
-- Dynamic book-title reminder bodies / streak pressure notifications
-- Quiet hours automation / multiple reminder times per day
+- AppMetrica / Yandex Ads (Phase 14)
+- Cloud sync / social
+- Heavy visual redesign / tablet layouts

@@ -1,5 +1,5 @@
-import { router, Stack, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useCallback, useMemo, useState } from 'react'
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native'
 
 import { NoteTypeChips } from '@/components/notes/NoteTypeChips'
@@ -25,6 +25,7 @@ import {
 	takePendingOcrDraft,
 } from '@/domain/ocr/ocrService'
 import type { LibraryBookItem } from '@/db/types'
+import { useDirtyFormGuard } from '@/hooks/useDirtyFormGuard'
 import {
 	hoursMinutesToSeconds,
 	secondsToHoursMinutes,
@@ -35,7 +36,6 @@ import {
  */
 export default function NewNoteScreen () {
 	const { executor } = useDatabase()
-	const navigation = useNavigation()
 	const params = useLocalSearchParams<{
 		entryId?: string
 		type?: string
@@ -61,6 +61,8 @@ export default function NewNoteScreen () {
 	const [error, setError] = useState<string | null>(null)
 	const [saving, setSaving] = useState(false)
 	const [dirty, setDirty] = useState(false)
+
+	useDirtyFormGuard({ dirty, saving })
 
 	const entryId = params.entryId
 
@@ -119,27 +121,6 @@ export default function NewNoteScreen () {
 			void load()
 		}, [load]),
 	)
-
-	useEffect(() => {
-		const unsubscribe = navigation.addListener('beforeRemove', (event: {
-			preventDefault: () => void
-			data: { action: unknown }
-		}) => {
-			if (!dirty || saving) {
-				return
-			}
-			event.preventDefault()
-			Alert.alert(diaryCopy.dirtyTitle, undefined, [
-				{
-					text: diaryCopy.dirtyDiscard,
-					style: 'destructive',
-					onPress: () => navigation.dispatch(event.data.action as never),
-				},
-				{ text: diaryCopy.dirtyKeep, style: 'cancel' },
-			])
-		})
-		return unsubscribe
-	}, [navigation, dirty, saving])
 
 	const canScanQuote =
 		type === 'QUOTE' &&

@@ -16,8 +16,8 @@ import {
 	LoadingState,
 	PrimaryButton,
 	Screen,
+	SearchField,
 	SectionHeader,
-	TextField,
 } from '@/components/ui'
 import { libraryCopy } from '@/constants/copy'
 import type { LibrarySort, LibraryStatus } from '@/constants/domain'
@@ -88,14 +88,11 @@ export default function LibraryScreen () {
 
 			{!isGloballyEmpty ? (
 				<>
-					<TextField
+					<SearchField
 						placeholder={libraryCopy.searchPlaceholder}
 						value={searchInput}
 						onChangeText={setSearchInput}
-						autoCapitalize="none"
-						autoCorrect={false}
-						clearButtonMode="while-editing"
-						style={styles.search}
+						accessibilityLabel={libraryCopy.searchPlaceholder}
 					/>
 					<ChipScroller
 						options={filterOptions}
@@ -146,6 +143,17 @@ export default function LibraryScreen () {
 						title={libraryCopy.filterEmpty(
 							statusFilterLabels[status],
 						)}
+						actionLabel={
+							searchInput.trim()
+								? libraryCopy.clearSearch
+								: libraryCopy.resetFilters
+						}
+						onAction={() => {
+							if (searchInput.trim()) {
+								setSearchInput('')
+							}
+							setStatus('ALL')
+						}}
 					/>
 				</View>
 			) : null}
