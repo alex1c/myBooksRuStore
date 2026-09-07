@@ -176,6 +176,16 @@ export default function StatsScreen () {
 
 			{loading && !dashboard ? <LoadingState /> : null}
 
+			<Pressable
+				onPress={() => router.push('/year-in-books')}
+				style={styles.yearEntry}
+				accessibilityRole="button"
+				accessibilityLabel={statsCopy.yearInBooksEntry}
+			>
+				<Text style={styles.yearEntryTitle}>{statsCopy.yearInBooksEntry}</Text>
+				<Text style={styles.yearEntryHint}>{statsCopy.yearInBooksHint}</Text>
+			</Pressable>
+
 			{/* Period selector */}
 			<View style={styles.periodRow}>
 				{PERIODS.map((p) => {
@@ -750,6 +760,20 @@ const styles = StyleSheet.create({
 	content: {
 		gap: spacing.md,
 		paddingBottom: spacing.xxl,
+	},
+	yearEntry: {
+		backgroundColor: colors.primarySoft,
+		borderRadius: radii.lg,
+		padding: spacing.md,
+		gap: 4,
+	},
+	yearEntryTitle: {
+		...typography.section,
+		color: colors.primaryDark,
+	},
+	yearEntryHint: {
+		...typography.bodySmall,
+		color: colors.textSecondary,
 	},
 	card: {
 		gap: spacing.sm,

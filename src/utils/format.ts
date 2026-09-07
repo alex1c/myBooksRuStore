@@ -68,3 +68,11 @@ export function formatDaysCount (n: number): string {
 export function formatSessionsCount (n: number): string {
 	return `${formatIntegerRu(n)} ${pluralRu(n, ['сессия', 'сессии', 'сессий'])}`
 }
+
+/** Whole hours for Year in Books highlights: `186 часов`. */
+export function formatHoursCount (totalSeconds: number): string {
+	const hours = Math.floor(Math.max(0, totalSeconds) / 3600)
+	return `${formatIntegerRu(hours)} ${pluralRu(hours, ['час', 'часа', 'часов'])}`
+}
+
+export { pluralRu }

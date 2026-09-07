@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 7 — Statistics** ← DONE  
-**Phase 8 — Year in Books** ← NEXT
+**Phase 8 — Year in Books** ← DONE  
+**Phase 9 — Backup / restore / export** ← NEXT
 
 ## Phases
 
@@ -16,8 +16,8 @@
 | 5 | Diary / quotes / thoughts | **DONE** |
 | 6 | Calendar / streak / goals | **DONE** |
 | 7 | Statistics | **DONE** |
-| 8 | Year in Books | **NEXT** |
-| 9 | Backup / restore / export | Planned |
+| 8 | Year in Books | **DONE** |
+| 9 | Backup / restore / export | **NEXT** |
 | 10 | Mass import | Planned |
 | 11 | OCR quotes | Planned |
 | 12 | Notifications | Planned |
@@ -26,16 +26,15 @@
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 7 scope (DONE)
+## Phase 8 scope (DONE)
 
-- Statistics tab: period selector (7 / 30 / 90 / year / all), summary, charts, insights
-- Reuses activity / streak / goals services (single page-delta + reading-day semantics)
-- Summary: finished books, net pages, session time, reading days
-- Charts: time|pages series; monthly completed books for year/all
-- Formats, ratings, top books by session duration, sessions, notes, library overview
-- Date precision: EXACT / YEAR / UNKNOWN (honest annual vs monthly totals)
-- Offline-only aggregation via `statisticsService`
-- No stored statistics table; no migration 006 (indexes already sufficient)
+- Entry from Statistics → «Мой год в книгах»
+- Horizontal paging slides (cover → numbers → pace → month → books → insights → activity → notes → share)
+- `getYearInBooks(year)` reuses statisticsService / activityService semantics
+- Best streak **within selected year** (cross-year streaks clipped)
+- Partial metrics: unavailable vs observed (no fake 0 hours/pages highlights)
+- Share card image via `react-native-view-shot` + `expo-sharing`, text fallback
+- No ads on Year cards; offline-only; no private notes on share image
 
 ## Midnight rule (documented)
 
@@ -45,7 +44,7 @@ Page nets from SESSION_END are included so calendar / goals / stats match.
 
 ## Explicitly deferred
 
-- Year in Books / Wrapped share cards (Phase 8)
-- Backup / OCR / notifications / ads
+- Backup / restore / CSV / PDF (Phase 9+)
+- OCR / notifications / ads
 - Genre analytics (no genre model)
 - Separate reread completion cycles

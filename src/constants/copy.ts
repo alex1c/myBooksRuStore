@@ -411,6 +411,50 @@ export const statsCopy = {
 	placeholderTime: 'Время',
 	placeholderDays: 'Дни чтения',
 	placeholderValue: '—',
+	yearInBooksEntry: 'Мой год в книгах',
+	yearInBooksHint: 'Красивый итог выбранного года',
+} as const
+
+export const yearInBooksCopy = {
+	back: 'Назад',
+	brand: 'Дневник чтения',
+	coverTitle: (year: number) => `Мой ${year} год в книгах`,
+	coverSubtitle: 'Год, который я прочитал',
+	emptyTitle: (year: number) => `В ${year} году пока нет данных о чтении.`,
+	emptyDescription:
+		'Когда появятся сессии, прогресс или прочитанные книги — здесь соберётся итог года.',
+	numbersTitle: 'Главные числа',
+	yearPrecisionHint: (n: number) =>
+		`Ещё ${n} ${n === 1 ? 'книга с известным только годом' : n < 5 ? 'книги с известным только годом' : 'книг с известным только годом'}.`,
+	paceTitle: 'Ритм чтения',
+	avgPerActiveDay: 'в среднем за активный день',
+	avgPagesPerDay: 'страниц за активный день',
+	longestSession: 'Самая длинная сессия',
+	sessionsTotal: (n: number) => `Всего сессий: ${n}`,
+	monthTitle: 'Лучший месяц',
+	monthByTime: 'Больше всего времени читали',
+	monthByPages: 'Больше всего страниц',
+	monthSecondary: (month: string, pages: string) =>
+		`Больше всего страниц — в ${month.toLowerCase()}: ${pages}`,
+	topBooksTitle: 'Больше всего читали',
+	topBooksByTime: 'По времени сессий',
+	topBooksByPages: 'По прочитанным страницам',
+	insightsTitle: 'Любимое',
+	topAuthor: 'Чаще всего читали',
+	favoriteFormat: 'Любимый формат',
+	avgRating: 'Средняя оценка',
+	highestRated: 'Самая высокая оценка',
+	longestBook: 'Самая длинная книга',
+	activityTitle: 'Активность',
+	bestStreak: (n: number) => `Лучшая серия в этом году: ${n} дн.`,
+	notesTitle: 'Дневник',
+	quotes: (n: number) => `${n} ${n === 1 ? 'цитата' : n < 5 ? 'цитаты' : 'цитат'}`,
+	thoughts: (n: number) => `${n} ${n === 1 ? 'мысль' : n < 5 ? 'мысли' : 'мыслей'}`,
+	notes: (n: number) => `${n} ${n === 1 ? 'заметка' : n < 5 ? 'заметки' : 'заметок'}`,
+	quoteSample: 'Одна из ваших цитат года',
+	shareTitle: 'Итог года',
+	share: 'Поделиться',
+	sharing: 'Готовим…',
 } as const
 
 export const moreCopy = {

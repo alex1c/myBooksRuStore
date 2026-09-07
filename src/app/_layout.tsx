@@ -71,6 +71,13 @@ export default function RootLayout () {
 						<Stack.Screen name="notes" />
 						<Stack.Screen name="goals" />
 						<Stack.Screen
+							name="year-in-books/index"
+							options={{
+								headerShown: false,
+								animation: 'slide_from_right',
+							}}
+						/>
+						<Stack.Screen
 							name="archive"
 							options={{
 								headerShown: true,

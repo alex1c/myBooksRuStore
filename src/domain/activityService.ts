@@ -347,7 +347,7 @@ function countBackwards (set: Set<string>, fromKey: string): number {
 	return count
 }
 
-function computeBestStreak (sortedAsc: string[]): number {
+export function computeBestStreak (sortedAsc: string[]): number {
 	if (sortedAsc.length === 0) {
 		return 0
 	}
@@ -364,6 +364,36 @@ function computeBestStreak (sortedAsc: string[]): number {
 		}
 	}
 	return best
+}
+
+/**
+ * Best consecutive active-day streak whose days all fall inside [startKey, endKey].
+ * Cross-year streaks are clipped: only days inside the range count
+ * (e.g. Dec 30–31 2025 + Jan 1–3 2026 → best-in-2026 = 3).
+ */
+export async function getBestStreakInRange (
+	db: SqlExecutor,
+	startKey: string,
+	endKey: string,
+): Promise<number> {
+	const map = await getActivityForRange(db, startKey, endKey, {
+		fillEmptyDays: false,
+	})
+	const active = [...map.values()]
+		.filter((d) => d.active)
+		.map((d) => d.dayKey)
+		.sort(compareDayKeys)
+	return computeBestStreak(active)
+}
+
+/** Best streak within a calendar year (local Jan 1 – Dec 31). */
+export async function getBestStreakInYear (
+	db: SqlExecutor,
+	year: number,
+): Promise<number> {
+	const startKey = `${year}-01-01`
+	const endKey = `${year}-12-31`
+	return getBestStreakInRange(db, startKey, endKey)
 }
 
 export async function getStreakSummary (
