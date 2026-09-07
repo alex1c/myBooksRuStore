@@ -78,6 +78,20 @@ export default function RootLayout () {
 							}}
 						/>
 						<Stack.Screen
+							name="backup/index"
+							options={{
+								headerShown: true,
+								title: 'Резервная копия',
+							}}
+						/>
+						<Stack.Screen
+							name="export/index"
+							options={{
+								headerShown: true,
+								title: 'Экспорт данных',
+							}}
+						/>
+						<Stack.Screen
 							name="archive"
 							options={{
 								headerShown: true,

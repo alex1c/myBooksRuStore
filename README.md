@@ -161,8 +161,8 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 8 — Year in Books** (complete). Phase 9 (backup / restore / export) is next.
+**Phase 9 — Backup / restore / export** (complete). Phase 10 (mass import) is next.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
-when the network is unavailable. Statistics and Year in Books are computed locally
-from sessions, progress events, and library history — no network required.
+when the network is unavailable. Statistics, Year in Books, and backup/export are
+local-only — files are never uploaded automatically.

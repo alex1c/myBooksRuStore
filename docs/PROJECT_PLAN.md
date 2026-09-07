@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 8 — Year in Books** ← DONE  
-**Phase 9 — Backup / restore / export** ← NEXT
+**Phase 9 — Backup / restore / export** ← DONE  
+**Phase 10 — Mass import** ← NEXT
 
 ## Phases
 
@@ -17,8 +17,8 @@
 | 6 | Calendar / streak / goals | **DONE** |
 | 7 | Statistics | **DONE** |
 | 8 | Year in Books | **DONE** |
-| 9 | Backup / restore / export | **NEXT** |
-| 10 | Mass import | Planned |
+| 9 | Backup / restore / export | **DONE** |
+| 10 | Mass import | **NEXT** |
 | 11 | OCR quotes | Planned |
 | 12 | Notifications | Planned |
 | 13 | UX polish | Planned |
@@ -26,25 +26,18 @@
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 8 scope (DONE)
+## Phase 9 scope (DONE)
 
-- Entry from Statistics → «Мой год в книгах»
-- Horizontal paging slides (cover → numbers → pace → month → books → insights → activity → notes → share)
-- `getYearInBooks(year)` reuses statisticsService / activityService semantics
-- Best streak **within selected year** (cross-year streaks clipped)
-- Partial metrics: unavailable vs observed (no fake 0 hours/pages highlights)
-- Share card image via `react-native-view-shot` + `expo-sharing`, text fallback
-- No ads on Year cards; offline-only; no private notes on share image
-
-## Midnight rule (documented)
-
-Completed sessions attribute activity to the **local calendar day of `startedAt`**.
-Overnight sessions are not split; SESSION_END does not invent a second session day.
-Page nets from SESSION_END are included so calendar / goals / stats match.
+- Structured ZIP backup (`manifest.json` + `data.json` + `covers/`), formatVersion 1, SHA-256
+- Full replace restore with validation, FK check, atomic transaction
+- Round-trip preserves IDs, relations, archives, active sessions, finished precision
+- CSV library export (UTF-8 BOM, `;`, escaping)
+- PDF library report via expo-print (filters, escaped HTML, Russian labels)
+- Entry: Ещё → Резервная копия / Экспорт данных
+- No cloud sync; no merge import (Phase 10)
 
 ## Explicitly deferred
 
-- Backup / restore / CSV / PDF (Phase 9+)
+- Mass import / Goodreads CSV import (Phase 10)
 - OCR / notifications / ads
-- Genre analytics (no genre model)
-- Separate reread completion cycles
+- Cloud backup providers

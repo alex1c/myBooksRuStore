@@ -461,7 +461,9 @@ export const moreCopy = {
 	title: 'Ещё',
 	subtitle: 'Настройки и сведения о приложении',
 	backup: 'Резервная копия',
-	backupHint: 'Экспорт и восстановление появятся позже',
+	backupHint: 'Создать или восстановить полную копию данных',
+	exportData: 'Экспорт данных',
+	exportDataHint: 'CSV библиотеки и PDF-отчёт',
 	reminders: 'Напоминания',
 	remindersHint: 'Настройка ежедневных напоминаний появится позже',
 	archive: 'Архив книг',
@@ -472,6 +474,59 @@ export const moreCopy = {
 	aboutHint: 'Дневник чтения · версия 1.0.0',
 	aboutBody:
 		'Личный offline-first дневник чтения. Основные действия доступны без регистрации и без интернета.',
+} as const
+
+export const backupCopy = {
+	title: 'Резервная копия',
+	subtitle:
+		'Копия включает библиотеку, прогресс, историю чтения, цитаты, заметки, цели и настройки.',
+	privacy:
+		'Файлы создаются на устройстве и никуда не отправляются автоматически.',
+	create: 'Создать копию',
+	restoreFromFile: 'Восстановить из файла',
+	creating: 'Создаём резервную копию…',
+	restoring: 'Восстанавливаем данные…',
+	createdTitle: 'Резервная копия создана',
+	createdBody: (books: number, sessions: number, notes: number) =>
+		`${books} книг · ${sessions} сессий · ${notes} записей`,
+	share: 'Поделиться',
+	done: 'Готово',
+	cancel: 'Отмена',
+	restore: 'Восстановить',
+	makeSafetyBackup: 'Сначала сохранить текущие',
+	restoreConfirmTitle: 'Восстановить резервную копию?',
+	restoreConfirmBody:
+		'Текущие данные приложения будут заменены данными из выбранной копии.',
+	restoreSuccessTitle: 'Данные успешно восстановлены',
+	restoreSuccessBody: 'Библиотека и история чтения загружены из копии.',
+	errorTitle: 'Ошибка',
+	backupFailed: 'Не удалось создать резервную копию.',
+	restoreFailed:
+		'Не удалось восстановить резервную копию. Файл повреждён или имеет неподдерживаемый формат.',
+} as const
+
+export const exportCopy = {
+	title: 'Экспорт данных',
+	subtitle: 'Читаемые файлы для вас — не полная резервная копия.',
+	privacy:
+		'Файлы создаются на устройстве и никуда не отправляются автоматически.',
+	csvTitle: 'Библиотека CSV',
+	csvHint: 'Таблица для Excel и других программ.',
+	csvAction: 'Экспортировать CSV',
+	pdfTitle: 'Библиотека PDF',
+	pdfHint: 'Читаемый отчёт по книгам.',
+	pdfAction: 'Создать PDF',
+	filterAll: 'Вся библиотека',
+	filterFinished: 'Прочитанные',
+	filterReading: 'Читаю',
+	filterWant: 'Хочу прочитать',
+	creatingCsv: 'Создаём CSV…',
+	creatingPdf: 'Создаём PDF…',
+	csvReady: 'Файл CSV создан',
+	pdfReady: 'PDF создан',
+	errorTitle: 'Ошибка',
+	csvFailed: 'Не удалось создать CSV.',
+	pdfFailed: 'Не удалось создать PDF.',
 } as const
 
 export const validationCopy = {
