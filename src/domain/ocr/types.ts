@@ -15,7 +15,7 @@ export interface OcrResult {
 	lines?: OcrLine[]
 }
 
-export type OcrFailureKind = 'EMPTY' | 'FAILED' | 'UNSUPPORTED'
+export type OcrFailureKind = 'EMPTY' | 'FAILED' | 'UNSUPPORTED' | 'MODEL_DOWNLOAD'
 
 export class OcrError extends Error {
 	readonly kind: OcrFailureKind

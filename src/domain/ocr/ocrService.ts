@@ -84,12 +84,12 @@ export async function recognizeText (imageUri: string): Promise<OcrResult> {
 		}
 		const result = await getOcrEngine().recognizeText(prepared)
 		return result
-	} catch (error) {
-		if (error instanceof OcrError) {
-			throw error
-		}
-		throw new OcrError('FAILED', 'Не удалось распознать текст.')
-	} finally {
+		} catch (error) {
+			if (error instanceof OcrError) {
+				throw error
+			}
+			throw new OcrError('FAILED', 'Не удалось распознать текст.')
+		} finally {
 		recognizing = false
 		if (prepared && prepared !== imageUri) {
 			await cleanupOcrTempImage(prepared)

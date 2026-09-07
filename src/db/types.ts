@@ -152,6 +152,8 @@ export interface ReadingGoal {
 export interface AppSettings {
 	reminderEnabled: boolean
 	reminderTime: string
+	/** ISO weekdays Mon=1 … Sun=7 selected for reading reminders. */
+	reminderWeekdays: number[]
 	defaultProgressMode: ProgressMode
 	theme: ThemePreference
 	onboardingCompleted: boolean

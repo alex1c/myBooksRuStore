@@ -157,6 +157,8 @@ export interface BackupGoal {
 export interface BackupSettings {
 	reminderEnabled: boolean
 	reminderTime: string
+	/** ISO weekdays Mon=1 … Sun=7 (optional for older backups). */
+	reminderWeekdays?: number[]
 	defaultProgressMode: ProgressMode
 	theme: ThemePreference
 	onboardingCompleted: boolean

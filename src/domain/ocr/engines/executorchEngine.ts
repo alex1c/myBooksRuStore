@@ -27,6 +27,26 @@ interface OcrEngineModule {
 	delete (): void
 }
 
+/** Heuristic: first-use model fetch failed without network. */
+export function isLikelyModelDownloadFailure (error: unknown): boolean {
+	const msg = String(
+		error instanceof Error ? error.message : error,
+	).toLowerCase()
+	return (
+		msg.includes('network') ||
+		msg.includes('fetch') ||
+		msg.includes('download') ||
+		msg.includes('offline') ||
+		msg.includes('internet') ||
+		msg.includes('enotfound') ||
+		msg.includes('econnrefused') ||
+		msg.includes('timed out') ||
+		msg.includes('timeout') ||
+		msg.includes('failed to load') ||
+		msg.includes('unable to resolve')
+	)
+}
+
 async function ensureExecutorchInitialized (): Promise<boolean> {
 	if (Platform.OS === 'web') {
 		return false
@@ -77,7 +97,13 @@ export function createExecutorchOcrEngine (): OcrEngine {
 			let mod: OcrEngineModule | null
 			try {
 				mod = await loadRussianOcrModule()
-			} catch {
+			} catch (error) {
+				if (isLikelyModelDownloadFailure(error)) {
+					throw new OcrError(
+						'MODEL_DOWNLOAD',
+						'Для первого запуска распознавания нужен интернет, чтобы загрузить модель. Фото при этом никуда не отправляется.',
+					)
+				}
 				throw new OcrError(
 					'FAILED',
 					'Не удалось распознать текст.',

@@ -21,6 +21,7 @@ export const MAX_BACKUP_TOTAL_COVER_BYTES = 256 * 1024 * 1024
 export const BACKUP_SETTINGS_KEYS = [
 	'reminder_enabled',
 	'reminder_time',
+	'reminder_weekdays',
 	'default_progress_mode',
 	'theme',
 	'onboarding_completed',

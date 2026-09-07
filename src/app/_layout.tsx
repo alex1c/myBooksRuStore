@@ -2,6 +2,7 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { AppErrorBoundary } from '@/components/ErrorBoundary'
@@ -9,18 +10,34 @@ import { ErrorState, LoadingState } from '@/components/ui'
 import { appCopy } from '@/constants/copy'
 import { colors } from '@/constants/theme'
 import { DatabaseProvider } from '@/context/DatabaseContext'
+import {
+	configureForegroundNotificationHandler,
+	createExpoNotificationsAdapter,
+} from '@/domain/reminders/expoNotificationsAdapter'
+import { setNotificationsAdapter } from '@/domain/reminders/notificationsAdapter'
 import { useAppBootstrap } from '@/hooks/useAppBootstrap'
+import { useReadingReminderNotificationRouting } from '@/hooks/useReadingReminderNotificationRouting'
 
 // Keep splash visible until DB bootstrap finishes (or fails recoverably).
 SplashScreen.preventAutoHideAsync().catch(() => {
 	// Ignore if splash is already hidden in fast refresh / tests.
 })
 
+if (Platform.OS !== 'web') {
+	try {
+		setNotificationsAdapter(createExpoNotificationsAdapter())
+		configureForegroundNotificationHandler()
+	} catch {
+		// Native module may be unavailable in some test hosts.
+	}
+}
+
 /**
  * Root layout: bootstrap SQLite, then mount tab navigation + library stacks.
  */
 export default function RootLayout () {
 	const { status, database, retry } = useAppBootstrap()
+	useReadingReminderNotificationRouting(status === 'ready')
 
 	useEffect(() => {
 		if (status === 'ready' || status === 'error') {
@@ -97,6 +114,13 @@ export default function RootLayout () {
 							options={{
 								headerShown: true,
 								title: 'Импорт книг',
+							}}
+						/>
+						<Stack.Screen
+							name="reminders/index"
+							options={{
+								headerShown: true,
+								title: 'Напоминания',
 							}}
 						/>
 						<Stack.Screen

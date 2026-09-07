@@ -3,11 +3,13 @@
  */
 
 import {
+	DEFAULT_REMINDER_WEEKDAYS,
 	setAnalyticsConsent,
 	setDefaultProgressMode,
 	setOnboardingCompleted,
 	setReminderEnabled,
 	setReminderTime,
+	setReminderWeekdays,
 	setThemePreference,
 } from '@/db/repositories/settings'
 import { SqlExecutor } from '@/db/sqlExecutor'
@@ -286,6 +288,12 @@ async function applySettings (
 	const s = data.settings
 	await setReminderEnabled(db, s.reminderEnabled)
 	await setReminderTime(db, s.reminderTime)
+	await setReminderWeekdays(
+		db,
+		s.reminderWeekdays?.length
+			? s.reminderWeekdays
+			: [...DEFAULT_REMINDER_WEEKDAYS],
+	)
 	await setDefaultProgressMode(db, s.defaultProgressMode)
 	await setThemePreference(db, s.theme)
 	await setOnboardingCompleted(db, s.onboardingCompleted)

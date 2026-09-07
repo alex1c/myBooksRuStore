@@ -11,15 +11,21 @@ import { SqlExecutor } from '@/db/sqlExecutor'
 export const SETTINGS_KEYS = {
 	reminderEnabled: 'reminder_enabled',
 	reminderTime: 'reminder_time',
+	reminderWeekdays: 'reminder_weekdays',
+	reminderScheduleIds: 'reminder_schedule_ids',
 	defaultProgressMode: 'default_progress_mode',
 	theme: 'theme',
 	onboardingCompleted: 'onboarding_completed',
 	analyticsConsent: 'analytics_consent',
 } as const
 
+/** ISO weekdays Mon=1 … Sun=7 — default when reminders are first configured. */
+export const DEFAULT_REMINDER_WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const
+
 export const DEFAULT_SETTINGS: AppSettings = {
 	reminderEnabled: false,
-	reminderTime: '20:00',
+	reminderTime: '21:00',
+	reminderWeekdays: [...DEFAULT_REMINDER_WEEKDAYS],
 	defaultProgressMode: 'PAGES',
 	theme: 'system',
 	onboardingCompleted: false,
@@ -41,6 +47,17 @@ export async function ensureAppSettings (db: SqlExecutor): Promise<AppSettings> 
 	await db.runAsync(
 		`INSERT OR IGNORE INTO app_meta (key, value) VALUES (?, ?)`,
 		[SETTINGS_KEYS.reminderTime, DEFAULT_SETTINGS.reminderTime],
+	)
+	await db.runAsync(
+		`INSERT OR IGNORE INTO app_meta (key, value) VALUES (?, ?)`,
+		[
+			SETTINGS_KEYS.reminderWeekdays,
+			serializeWeekdays(DEFAULT_SETTINGS.reminderWeekdays),
+		],
+	)
+	await db.runAsync(
+		`INSERT OR IGNORE INTO app_meta (key, value) VALUES (?, ?)`,
+		[SETTINGS_KEYS.reminderScheduleIds, '[]'],
 	)
 	await db.runAsync(
 		`INSERT OR IGNORE INTO app_meta (key, value) VALUES (?, ?)`,
@@ -70,6 +87,10 @@ export async function getAppSettings (db: SqlExecutor): Promise<AppSettings> {
 	const reminderTime =
 		(await getMetaString(db, SETTINGS_KEYS.reminderTime)) ??
 		DEFAULT_SETTINGS.reminderTime
+	const weekdaysRaw = await getMetaString(db, SETTINGS_KEYS.reminderWeekdays)
+	const reminderWeekdays = parseWeekdays(weekdaysRaw) ?? [
+		...DEFAULT_SETTINGS.reminderWeekdays,
+	]
 	const progressRaw =
 		(await getMetaString(db, SETTINGS_KEYS.defaultProgressMode)) ??
 		DEFAULT_SETTINGS.defaultProgressMode
@@ -85,6 +106,7 @@ export async function getAppSettings (db: SqlExecutor): Promise<AppSettings> {
 	return {
 		reminderEnabled,
 		reminderTime,
+		reminderWeekdays,
 		defaultProgressMode: isProgressMode(progressRaw)
 			? progressRaw
 			: DEFAULT_SETTINGS.defaultProgressMode,
@@ -112,6 +134,51 @@ export async function setReminderTime (
 		throw new Error('INVALID_REMINDER_TIME')
 	}
 	await upsertMeta(db, SETTINGS_KEYS.reminderTime, time)
+}
+
+export async function setReminderWeekdays (
+	db: SqlExecutor,
+	weekdays: number[],
+): Promise<void> {
+	const normalized = normalizeWeekdays(weekdays)
+	if (normalized.length === 0) {
+		throw new Error('INVALID_REMINDER_WEEKDAYS')
+	}
+	await upsertMeta(
+		db,
+		SETTINGS_KEYS.reminderWeekdays,
+		serializeWeekdays(normalized),
+	)
+}
+
+/** Persist scheduled notification identifiers for reading reminders. */
+export async function setReminderScheduleIds (
+	db: SqlExecutor,
+	ids: string[],
+): Promise<void> {
+	await upsertMeta(
+		db,
+		SETTINGS_KEYS.reminderScheduleIds,
+		JSON.stringify(ids),
+	)
+}
+
+export async function getReminderScheduleIds (
+	db: SqlExecutor,
+): Promise<string[]> {
+	const raw = await getMetaString(db, SETTINGS_KEYS.reminderScheduleIds)
+	if (!raw) {
+		return []
+	}
+	try {
+		const parsed = JSON.parse(raw) as unknown
+		if (!Array.isArray(parsed)) {
+			return []
+		}
+		return parsed.filter((v): v is string => typeof v === 'string')
+	} catch {
+		return []
+	}
 }
 
 export async function setDefaultProgressMode (
@@ -150,6 +217,30 @@ export async function setAnalyticsConsent (
 	consent: boolean,
 ): Promise<void> {
 	await upsertMeta(db, SETTINGS_KEYS.analyticsConsent, consent ? '1' : '0')
+}
+
+/** ISO Mon=1 … Sun=7, unique sorted. */
+export function normalizeWeekdays (weekdays: number[]): number[] {
+	const set = new Set<number>()
+	for (const day of weekdays) {
+		if (Number.isInteger(day) && day >= 1 && day <= 7) {
+			set.add(day)
+		}
+	}
+	return [...set].sort((a, b) => a - b)
+}
+
+export function serializeWeekdays (weekdays: number[]): string {
+	return normalizeWeekdays(weekdays).join(',')
+}
+
+export function parseWeekdays (raw: string | null): number[] | null {
+	if (!raw || !raw.trim()) {
+		return null
+	}
+	const parts = raw.split(/[,\s]+/).map((p) => Number.parseInt(p, 10))
+	const normalized = normalizeWeekdays(parts)
+	return normalized.length > 0 ? normalized : null
 }
 
 async function getMetaString (

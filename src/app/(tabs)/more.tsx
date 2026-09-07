@@ -1,19 +1,15 @@
 import { router } from 'expo-router'
-import { Alert, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
 import { Card, ListRow, Screen, SectionHeader } from '@/components/ui'
-import { appCopy, moreCopy } from '@/constants/copy'
+import { moreCopy } from '@/constants/copy'
 import { colors, radii, spacing } from '@/constants/theme'
 
 /**
- * More / settings hub — backup, export, archive, shelves.
+ * More / settings hub — backup, export, archive, shelves, reminders.
  */
 export default function MoreScreen () {
-	const handleComingSoon = (subtitle: string) => {
-		Alert.alert(appCopy.comingSoonTitle, subtitle)
-	}
-
 	return (
 		<Screen scroll>
 			<SectionHeader title={moreCopy.title} subtitle={moreCopy.subtitle} />
@@ -71,7 +67,7 @@ export default function MoreScreen () {
 					left={
 						<Ionicons name="notifications-outline" size={22} color={colors.primary} />
 					}
-					onPress={() => handleComingSoon(moreCopy.remindersHint)}
+					onPress={() => router.push('/reminders')}
 				/>
 				<ListRow
 					title={moreCopy.about}

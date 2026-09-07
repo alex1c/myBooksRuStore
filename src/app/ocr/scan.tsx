@@ -42,7 +42,7 @@ export default function OcrScanScreen () {
 	const [permission, requestPermission] = useCameraPermissions()
 	const cameraRef = useRef<CameraViewType>(null)
 	const [busy, setBusy] = useState(false)
-	const [busyLabel, setBusyLabel] = useState(ocrCopy.processing)
+	const [busyLabel, setBusyLabel] = useState<string>(ocrCopy.processing)
 
 	const entryId = params.entryId
 	const returnTo =
@@ -73,7 +73,7 @@ export default function OcrScanScreen () {
 			return
 		}
 		setBusy(true)
-		setBusyLabel(ocrCopy.processing)
+		setBusyLabel(ocrCopy.downloadingModel)
 		let captureUri: string | null = null
 		try {
 			const photo = await cameraRef.current.takePictureAsync({
@@ -94,6 +94,7 @@ export default function OcrScanScreen () {
 				existingDraft: params.existingDraft ?? '',
 			})
 
+			setBusyLabel(ocrCopy.processing)
 			const result = await recognizeText(photo.uri)
 			updatePendingOcrDraft({
 				confirmedText: result.fullText,
@@ -102,8 +103,14 @@ export default function OcrScanScreen () {
 		} catch (error) {
 			const empty =
 				error instanceof OcrError && error.kind === 'EMPTY'
+			const modelDownload =
+				error instanceof OcrError && error.kind === 'MODEL_DOWNLOAD'
 			Alert.alert(
-				empty ? ocrCopy.empty : ocrCopy.failed,
+				modelDownload
+					? ocrCopy.modelOffline
+					: empty
+						? ocrCopy.empty
+						: ocrCopy.failed,
 				undefined,
 				[
 					{
@@ -184,6 +191,7 @@ export default function OcrScanScreen () {
 					subtitle={ocrCopy.scanHint}
 				/>
 				<Text style={styles.privacy}>{ocrCopy.privacy}</Text>
+				<Text style={styles.privacy}>{ocrCopy.privacyModelHint}</Text>
 				<View style={styles.cameraWrap}>
 					{busy ? (
 						<LoadingState message={busyLabel} />

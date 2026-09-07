@@ -161,8 +161,13 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 11 — Quote OCR capture** (complete). Phase 12 (reminders) is next.
+**Phase 12 — Reading reminders** (complete). Phase 13 (UX polish) is next.
+
+Local reading reminders via `expo-notifications` (no remote push). Settings live under
+Ещё → Напоминания. Notification verification needs a native / EAS Android build — Expo Go
+is not enough.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
 when the network is unavailable. Statistics, Year in Books, and backup/export are
-local-only — files are never uploaded automatically.
+local-only — files are never uploaded automatically. OCR photos/text stay on-device;
+the recognition model may download on first use.

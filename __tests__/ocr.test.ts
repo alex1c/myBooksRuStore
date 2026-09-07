@@ -305,6 +305,8 @@ describe('ISBN scanner regression markers', () => {
 		expect(scanCopy.title).toMatch(/ISBN/i)
 		expect(ocrCopy.scanTitle).toMatch(/цитат/i)
 		expect(ocrCopy.privacy).toMatch(/устройств/i)
+		expect(ocrCopy.privacyModelHint).toMatch(/модели/i)
+		expect(ocrCopy.modelOffline).toMatch(/интернет/i)
 		expect(scanCopy.permissionExplain).toMatch(/штрихкод|цитат/i)
 	})
 })
