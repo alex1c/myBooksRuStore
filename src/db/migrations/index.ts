@@ -2,6 +2,7 @@ import { migration001Initial } from './001_initial'
 import { migration002FinishedDatePrecision } from './002_finished_date_precision'
 import { migration003RemoteCoverUrl } from './003_remote_cover_url'
 import { migration004ActiveSessionsAndProgressEvents } from './004_active_sessions_and_progress_events'
+import { migration005ActivityIndexes } from './005_activity_indexes'
 
 export interface Migration {
 	version: number
@@ -39,6 +40,11 @@ export const migrations: Migration[] = [
 		name: '004_active_sessions_and_progress_events',
 		sql: migration004ActiveSessionsAndProgressEvents,
 		transactional: false,
+	},
+	{
+		version: 5,
+		name: '005_activity_indexes',
+		sql: migration005ActivityIndexes,
 	},
 ]
 

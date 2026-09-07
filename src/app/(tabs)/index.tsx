@@ -11,10 +11,16 @@ import {
 	Screen,
 	SectionHeader,
 } from '@/components/ui'
-import { sessionCopy, todayCopy } from '@/constants/copy'
+import { sessionCopy, todayCopy, statsCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import { listReadingNow } from '@/domain/libraryService'
+import {
+	listTodayMotivationGoals,
+	goalTitle,
+	type GoalProgress,
+} from '@/domain/goalsService'
+import { getStreakSummary, type StreakSummary } from '@/domain/activityService'
 import {
 	ActiveSessionConflictError,
 	applyQuickProgress,
@@ -36,6 +42,8 @@ export default function TodayScreen () {
 	const { executor } = useDatabase()
 	const [items, setItems] = useState<LibraryBookItem[]>([])
 	const [active, setActive] = useState<ActiveSessionBundle | null>(null)
+	const [motivationGoals, setMotivationGoals] = useState<GoalProgress[]>([])
+	const [streak, setStreak] = useState<StreakSummary | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [busy, setBusy] = useState(false)
 	const [exactEntryId, setExactEntryId] = useState<string | null>(null)
@@ -49,12 +57,16 @@ export default function TodayScreen () {
 	const load = useCallback(async () => {
 		setLoading(true)
 		try {
-			const [reading, bundle] = await Promise.all([
+			const [reading, bundle, goals, streakSummary] = await Promise.all([
 				listReadingNow(executor),
 				getActiveSessionBundle(executor),
+				listTodayMotivationGoals(executor),
+				getStreakSummary(executor),
 			])
 			setItems(reading)
 			setActive(bundle)
+			setMotivationGoals(goals)
+			setStreak(streakSummary)
 		} finally {
 			setLoading(false)
 		}
@@ -253,6 +265,44 @@ export default function TodayScreen () {
 				</Pressable>
 			) : null}
 
+			{motivationGoals.length > 0 || (streak && streak.current > 0) ? (
+				<View style={styles.motivation}>
+					{streak && streak.current > 0 ? (
+						<Text style={styles.motivationStreak}>
+							{statsCopy.streakCurrent(streak.current)}
+							{streak.todayPending
+								? ` · ${statsCopy.streakContinue}`
+								: ''}
+						</Text>
+					) : null}
+					{motivationGoals.map((goal) => (
+						<Pressable
+							key={goal.goal.id}
+							onPress={() => router.push('/(tabs)/stats')}
+						>
+							<Text style={styles.motivationGoal}>
+								{goalTitle(goal.goal)} · {goal.summary}
+							</Text>
+							<View style={styles.miniBar}>
+								<View
+									style={[
+										styles.miniFill,
+										{ width: `${Math.round(goal.ratio * 100)}%` },
+									]}
+								/>
+							</View>
+						</Pressable>
+					))}
+				</View>
+			) : (
+				<Pressable
+					onPress={() => router.push('/goals/form')}
+					style={styles.setGoal}
+				>
+					<Text style={styles.setGoalLabel}>{todayCopy.setGoal}</Text>
+				</Pressable>
+			)}
+
 			{loading && items.length === 0 ? <LoadingState /> : null}
 			{!loading && items.length === 0 ? (
 				<View style={styles.empty}>
@@ -366,6 +416,45 @@ const styles = StyleSheet.create({
 	bannerMeta: {
 		...typography.bodySmall,
 		color: colors.primaryDark,
+	},
+	motivation: {
+		gap: spacing.xs,
+		marginBottom: spacing.md,
+		padding: spacing.sm,
+		backgroundColor: colors.surface,
+		borderRadius: radii.md,
+		borderWidth: StyleSheet.hairlineWidth,
+		borderColor: colors.border,
+	},
+	motivationStreak: {
+		...typography.bodySmall,
+		fontWeight: '600',
+		color: colors.primaryDark,
+	},
+	motivationGoal: {
+		...typography.bodySmall,
+		color: colors.text,
+	},
+	miniBar: {
+		height: 5,
+		borderRadius: radii.full,
+		backgroundColor: colors.surfaceMuted,
+		overflow: 'hidden',
+		marginTop: 4,
+		marginBottom: spacing.xs,
+	},
+	miniFill: {
+		height: '100%',
+		backgroundColor: colors.primary,
+	},
+	setGoal: {
+		marginBottom: spacing.md,
+		alignSelf: 'flex-start',
+	},
+	setGoalLabel: {
+		...typography.bodySmall,
+		fontWeight: '700',
+		color: colors.primary,
 	},
 	snackWrap: {
 		position: 'absolute',

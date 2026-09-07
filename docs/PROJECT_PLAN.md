@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 5 — Diary / quotes / thoughts** ← DONE  
-**Phase 6 — Calendar / streak / goals** ← NEXT
+**Phase 6 — Calendar / streak / goals** ← DONE  
+**Phase 7 — Statistics** ← NEXT
 
 ## Phases
 
@@ -14,8 +14,8 @@
 | 3 | Book search / ISBN | **DONE** |
 | 4 | Reading tracker | **DONE** |
 | 5 | Diary / quotes / thoughts | **DONE** |
-| 6 | Calendar / streak / goals | **NEXT** |
-| 7 | Statistics | Planned |
+| 6 | Calendar / streak / goals | **DONE** |
+| 7 | Statistics | **NEXT** |
 | 8 | Year in Books | Planned |
 | 9 | Backup / restore / export | Planned |
 | 10 | Mass import | Planned |
@@ -26,31 +26,25 @@
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 5 scope (DONE)
+## Phase 6 scope (DONE)
 
-- Notes on existing `reading_notes`: QUOTE / THOUGHT / NOTE
-- Fast add from book details, active session, finish screen
-- Optional location (page / percent / audio) with smart defaults
-- Auto-link to active reading session (`ON DELETE SET NULL`)
-- Book details notes section + full book notes screen
-- Diary tab timeline: completed sessions + notes, local-day grouping
-- Filters (all / sessions / quotes / thoughts / notes) + book filter + search
-- Edit / delete / copy / share; dirty-form back guard
-- Progress events intentionally excluded from diary (noise)
+- Activity tab (бывшая «Статистика»): streak, month calendar, goals
+- Reading day = completed session (duration > 0, by `startedAt` local day) OR net positive progress events (quick/manual/finish; undo nets out; SESSION_END not double-counted for days)
+- Local timezone day keys via `toLocalDayKey` / period helpers (Monday-first weeks)
+- Streak: current + best; today-pending friendly semantics
+- Goals: BOOKS / PAGES / MINUTES × DAY / WEEK / MONTH / YEAR on `reading_goals`
+- Pages from progress events (incl. SESSION_END + UNDO net); minutes from session duration only
+- Books: EXACT in period; YEAR precision only for annual goals; UNKNOWN excluded
+- Today compact daily/weekly goal strip
+- Migration 005: activity query index
+
+## Midnight rule (documented)
+
+Completed sessions attribute activity to the **local calendar day of `startedAt`**.
+Overnight sessions are not split; SESSION_END does not add a second activity day.
 
 ## Explicitly deferred
 
-- Calendar / streak / goals UI (Phase 6)
-- Statistics charts (Phase 7)
-- OCR scan-into-quote (Phase 11) — UI reserved a slot near note input
-- Favorite quotes / tags / rich text
-- Backup / restore / PDF / CSV
-- Notifications / AppMetrica / Yandex Ads
-- Auth / cloud / social / AI
-
-## Product principles
-
-- Offline-first personal reading diary
-- Everyday reading + reflection in few taps
-- Soft-archive over destructive deletes for books/history
-- Notes may be hard-deleted by explicit user action only
+- Advanced charts / analytics dashboard (Phase 7)
+- Year in Books, backup/OCR/notifications/ads
+- Goal completion history charts

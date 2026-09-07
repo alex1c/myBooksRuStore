@@ -281,7 +281,7 @@ describe('external add integration', () => {
 	it('adds mock search result into local library with local PK', async () => {
 		const db = createTestSqlExecutor()
 		await applyMigrations(db)
-		expect(await applyMigrations(db)).toBe(4)
+		expect(await applyMigrations(db)).toBe(5)
 
 		const created = await addExternalBookToLibrary(db, {
 			title: 'Мастер и Маргарита',
@@ -339,7 +339,7 @@ describe('migration v3', () => {
 				[migration.version, '2026-09-06T00:00:00.000Z'],
 			)
 		}
-		expect(await applyMigrations(db)).toBe(4)
+		expect(await applyMigrations(db)).toBe(5)
 		const cols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(books)`)
 		expect(cols.some((col) => col.name === 'remote_cover_url')).toBe(true)
 	})

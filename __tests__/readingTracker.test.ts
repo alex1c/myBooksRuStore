@@ -398,7 +398,7 @@ describe('reading tracker — integration', () => {
 	it('full flow: create → session → finish → reopen repo → history', async () => {
 		const db = createTestSqlExecutor()
 		await applyMigrations(db)
-		expect(await getSchemaVersion(db)).toBe(4)
+		expect(await getSchemaVersion(db)).toBe(5)
 
 		const book = await createBook(db, {
 			title: 'Мастер и Маргарита',
@@ -439,7 +439,7 @@ describe('reading tracker — integration', () => {
 	it('migration 004 adds progress events table and active index', async () => {
 		const db = createTestSqlExecutor()
 		await applyMigrations(db)
-		expect(await getSchemaVersion(db)).toBe(4)
+		expect(await getSchemaVersion(db)).toBe(5)
 
 		const events = await db.getFirstAsync(
 			`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'reading_progress_events'`,

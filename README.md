@@ -127,6 +127,8 @@ Screens must not embed raw SQL.
 nullable), partial unique index for one active session,
 `reading_progress_events` audit trail
 
+**Schema v5:** activity query index on `reading_progress_events(type, created_at)`
+
 ### Statuses
 
 `WANT_TO_READ` · `READING` · `FINISHED` · `PAUSED` · `ABANDONED`
@@ -159,7 +161,7 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 5 — Diary / quotes / thoughts** (complete). Phase 6 (calendar / streak / goals) is next.
+**Phase 6 — Calendar / streak / goals** (complete). Phase 7 (statistics) is next.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
 when the network is unavailable.

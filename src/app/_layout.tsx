@@ -69,6 +69,7 @@ export default function RootLayout () {
 						<Stack.Screen name="books" />
 						<Stack.Screen name="sessions" />
 						<Stack.Screen name="notes" />
+						<Stack.Screen name="goals" />
 						<Stack.Screen
 							name="archive"
 							options={{

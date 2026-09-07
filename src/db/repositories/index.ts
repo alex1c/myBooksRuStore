@@ -58,6 +58,14 @@ export {
 } from './readingNotes'
 
 export {
+	createReadingGoal,
+	getReadingGoalById,
+	listActiveReadingGoals,
+	updateReadingGoal,
+	archiveReadingGoal,
+} from './readingGoals'
+
+export {
 	createShelf,
 	renameShelf,
 	archiveShelf,
