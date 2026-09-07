@@ -27,6 +27,7 @@ import {
 	restoreFromZipBytes,
 	snapshotUserData,
 	unpackBackupZip,
+	isSafeCoverPath,
 } from '@/domain/backup/backupService'
 import { collectBackupArchive } from '@/domain/backup/collectBackupData'
 import { BACKUP_FORMAT_ID, BACKUP_FORMAT_VERSION } from '@/domain/backup/constants'
@@ -241,6 +242,12 @@ describe('backup collect + zip', () => {
 		expect(again.data.books.length).toBe(archive.data.books.length)
 		expect(again.manifest.dataSha256).toBe(archive.manifest.dataSha256)
 	})
+
+	it('rejects cover path traversal before exposing archive assets', async () => {
+		expect(isSafeCoverPath('covers/book.jpg')).toBe(true)
+		expect(isSafeCoverPath('covers/../outside.jpg')).toBe(false)
+		expect(isSafeCoverPath('covers\\outside.jpg')).toBe(false)
+	})
 })
 
 describe('backup validation', () => {
@@ -427,6 +434,29 @@ describe('csv export', () => {
 		expect(csv).not.toContain('lib_')
 		expect(csv).toContain('Точная дата')
 		expect(csv).toContain('Только год')
+	})
+
+	it('neutralizes spreadsheet formulas in user-controlled text', async () => {
+		const db = createTestSqlExecutor()
+		await applyMigrations(db)
+		await ensureAppSettings(db)
+		const book = await createBook(db, {
+			title: '=HYPERLINK("https://evil.example")',
+			authorText: '+author',
+			publisher: '@publisher',
+		})
+		await createLibraryEntry(db, {
+			bookId: book.id,
+			status: 'WANT_TO_READ',
+			format: 'PAPER',
+			progressMode: 'PAGES',
+			reviewText: '-1+1',
+		})
+		const csv = await buildLibraryCsv(db)
+		expect(csv).toContain("'=HYPERLINK")
+		expect(csv).toContain("'+author")
+		expect(csv).toContain("'@publisher")
+		expect(csv).toContain("'-1+1")
 	})
 })
 

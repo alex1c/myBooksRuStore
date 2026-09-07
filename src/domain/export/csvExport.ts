@@ -41,11 +41,17 @@ function escapeCsvCell (value: string): string {
 	return value
 }
 
-function cell (value: string | number | null | undefined): string {
+function cell (
+	value: string | number | null | undefined,
+	protectFormula = false,
+): string {
 	if (value == null) {
 		return ''
 	}
-	return escapeCsvCell(String(value))
+	const text = String(value)
+	const safeText =
+		protectFormula && /^[=+\-@]/.test(text) ? `'${text}` : text
+	return escapeCsvCell(safeText)
 }
 
 function formatAudio (seconds: number): string {
@@ -179,8 +185,8 @@ export async function buildLibraryCsv (db: SqlExecutor): Promise<string> {
 
 		lines.push(
 			[
-				cell(row.title),
-				cell(row.author_text),
+				cell(row.title, true),
+				cell(row.author_text, true),
 				cell(statusLabel),
 				cell(formatLabel),
 				cell(modeLabel),
@@ -190,12 +196,12 @@ export async function buildLibraryCsv (db: SqlExecutor): Promise<string> {
 				cell(finishedDate),
 				cell(precisionLabel),
 				cell(rating),
-				cell(row.shelves),
+				cell(row.shelves, true),
 				cell(row.isbn10),
 				cell(row.isbn13),
-				cell(row.publisher),
+				cell(row.publisher, true),
 				cell(row.published_year),
-				cell(row.review_text),
+				cell(row.review_text, true),
 			].join(DELIM),
 		)
 	}

@@ -15,7 +15,7 @@ import {
 	type CoverWriter,
 } from './restoreBackup'
 import type { BackupArchive } from './types'
-import { unpackBackupZip, packBackupZip } from './zipArchive'
+import { unpackBackupZip, packBackupZip, isSafeCoverPath } from './zipArchive'
 
 export {
 	collectBackupArchive,
@@ -24,6 +24,7 @@ export {
 	snapshotUserData,
 	packBackupZip,
 	unpackBackupZip,
+	isSafeCoverPath,
 }
 export type { CoverReader, CoverWriter, BackupArchive }
 
