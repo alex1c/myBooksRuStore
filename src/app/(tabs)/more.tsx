@@ -56,6 +56,15 @@ export default function MoreScreen () {
 					onPress={() => router.push('/export')}
 				/>
 				<ListRow
+					title={moreCopy.importData}
+					subtitle={moreCopy.importDataHint}
+					showChevron
+					left={
+						<Ionicons name="cloud-download-outline" size={22} color={colors.primary} />
+					}
+					onPress={() => router.push('/import')}
+				/>
+				<ListRow
 					title={moreCopy.reminders}
 					subtitle={moreCopy.remindersHint}
 					showChevron

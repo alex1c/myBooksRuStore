@@ -161,7 +161,7 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 9 — Backup / restore / export** (complete). Phase 10 (mass import) is next.
+**Phase 10 — Mass library import** (complete). Phase 11 (OCR quotes) is next.
 
 Manual library + Open Library search/ISBN scan. Offline core remains fully usable
 when the network is unavailable. Statistics, Year in Books, and backup/export are

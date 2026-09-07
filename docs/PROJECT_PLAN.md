@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 9 — Backup / restore / export** ← DONE  
-**Phase 10 — Mass import** ← NEXT
+**Phase 10 — Mass import** ← DONE  
+**Phase 11 — OCR quotes** ← NEXT
 
 ## Phases
 
@@ -18,7 +18,7 @@
 | 7 | Statistics | **DONE** |
 | 8 | Year in Books | **DONE** |
 | 9 | Backup / restore / export | **DONE** |
-| 10 | Mass import | **NEXT** |
+| 10 | Mass import | **DONE** |
 | 11 | OCR quotes | Planned |
 | 12 | Notifications | Planned |
 | 13 | UX polish | Planned |
@@ -26,18 +26,17 @@
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 9 scope (DONE)
+## Phase 10 scope (DONE)
 
-- Structured ZIP backup (`manifest.json` + `data.json` + `covers/`), formatVersion 1, SHA-256
-- Full replace restore with validation, FK check, atomic transaction
-- Round-trip preserves IDs, relations, archives, active sessions, finished precision
-- CSV library export (UTF-8 BOM, `;`, escaping)
-- PDF library report via expo-print (filters, escaped HTML, Russian labels)
-- Entry: Ещё → Резервная копия / Экспорт данных
-- No cloud sync; no merge import (Phase 10)
+- Offline CSV import pipeline: parse → normalize → validate → preview → duplicates → atomic commit → report
+- Formats: our Phase 9 CSV, Goodreads export, generic CSV with column mapping
+- Delimiters `;` / `,` / tab; UTF-8 (+ BOM); quoted multiline fields
+- Duplicate policies: skip (default) / add as another edition; within-file first-wins
+- No fake reading activity (no sessions / progress events from historical import)
+- Entry: Ещё → Импорт
 
 ## Explicitly deferred
 
-- Mass import / Goodreads CSV import (Phase 10)
 - OCR / notifications / ads
 - Cloud backup providers
+- Unsafe auto-merge update of existing books on import

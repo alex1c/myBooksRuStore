@@ -92,6 +92,13 @@ export default function RootLayout () {
 							}}
 						/>
 						<Stack.Screen
+							name="import/index"
+							options={{
+								headerShown: true,
+								title: 'Импорт книг',
+							}}
+						/>
+						<Stack.Screen
 							name="archive"
 							options={{
 								headerShown: true,
