@@ -3,17 +3,31 @@
  */
 
 import { Stack, useLocalSearchParams } from 'expo-router'
+import { useEffect } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
 import { HelpIllustration } from '@/components/help/HelpIllustration'
 import { Screen } from '@/components/ui'
 import { helpCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
+import { track } from '@/domain/analytics/analyticsService'
+import { AnalyticsEvents } from '@/domain/analytics/types'
+import { mapHelpSectionToAnalytics } from '@/domain/analytics/helpSectionMap'
 import { getHelpSection } from '@/domain/help/helpCatalog'
 
 export default function HelpSectionScreen () {
 	const { section } = useLocalSearchParams<{ section: string }>()
 	const data = section ? getHelpSection(section) : null
+
+	useEffect(() => {
+		if (!section) {
+			return
+		}
+		const mapped = mapHelpSectionToAnalytics(section)
+		if (mapped) {
+			track(AnalyticsEvents.helpOpened, { section: mapped })
+		}
+	}, [section])
 
 	if (!data) {
 		return (

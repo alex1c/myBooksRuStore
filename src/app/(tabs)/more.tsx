@@ -3,7 +3,9 @@ import { StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
 import { Card, ListRow, Screen, SectionHeader } from '@/components/ui'
+import { AppBanner } from '@/components/ads/AppBanner'
 import { moreCopy } from '@/constants/copy'
+import { ADS_BANNER_GROUP_MORE } from '@/config/ads'
 import { colors, radii, spacing } from '@/constants/theme'
 
 /**
@@ -89,6 +91,7 @@ export default function MoreScreen () {
 					style={styles.lastRow}
 				/>
 			</Card>
+			<AppBanner group={ADS_BANNER_GROUP_MORE} />
 			<View style={styles.spacer} />
 		</Screen>
 	)

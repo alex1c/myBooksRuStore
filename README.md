@@ -55,16 +55,18 @@ npm run check
 
 ```
 src/
-  app/                 # Expo Router screens (5 tabs + about)
-  components/ui/       # Design-system primitives
+  app/                 # Expo Router screens (5 tabs + stacks)
+  components/          # UI + ads (AppBanner) + feature widgets
+  config/              # AppMetrica + Yandex Ads IDs (centralized)
   constants/           # Theme tokens, copy, domain enums
   context/             # Database provider
   db/                  # SQLite open, migrations, repositories
+  domain/              # Library, reading, analytics, ads policies
   hooks/               # App bootstrap
-  services/logging/    # Dev-friendly logger
-  utils/               # IDs, dates
-docs/                  # Project plan and phase roadmap
-__tests__/             # Jest foundation tests
+  services/            # Logging, book search, covers
+  utils/               # IDs, dates, formatters
+docs/                  # PROJECT_PLAN, ANALYTICS, ADS
+__tests__/             # Jest tests
 ```
 
 ### Layering
@@ -161,7 +163,9 @@ to keep backup/import/merge straightforward later.
 
 ## Current phase
 
-**Phase 13b — Onboarding & Help** (complete). Phase 14 (AppMetrica + Yandex Ads) is next.
+**Phase 14 — AppMetrica + Yandex Ads** (complete). Phase 15 (final native QA) is next.
+
+See `docs/ANALYTICS.md` and `docs/ADS.md`.
 
 First launch shows a short 4-step guide (skippable). Permanent help lives under
 Ещё → Как пользоваться.

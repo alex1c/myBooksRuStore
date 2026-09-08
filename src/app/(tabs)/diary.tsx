@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 
 import { NoteCard } from '@/components/notes/NoteCard'
+import { AppBanner } from '@/components/ads/AppBanner'
 import {
 	EmptyState,
 	LoadingState,
@@ -17,6 +18,7 @@ import {
 	SectionHeader,
 } from '@/components/ui'
 import { diaryCopy } from '@/constants/copy'
+import { ADS_BANNER_GROUP_DIARY_STATS } from '@/config/ads'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import { listLibraryBooks } from '@/domain/libraryService'
@@ -256,6 +258,8 @@ export default function DiaryScreen () {
 					onEndReachedThreshold={0.4}
 				/>
 			)}
+
+			<AppBanner group={ADS_BANNER_GROUP_DIARY_STATS} />
 		</Screen>
 	)
 }

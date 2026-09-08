@@ -41,6 +41,7 @@ import {
 	type HeaderMapping,
 	type ImportBookCandidate,
 	type ImportCommitReport,
+	type ImportFormat,
 	type ParsedCsvTable,
 } from '@/domain/import/importService'
 import { FIELD_LABELS_RU } from '@/domain/import/mapHeaders'
@@ -57,6 +58,7 @@ export default function ImportScreen () {
 	const [table, setTable] = useState<ParsedCsvTable | null>(null)
 	const [csvText, setCsvText] = useState('')
 	const [formatLabel, setFormatLabel] = useState('')
+	const [importFormat, setImportFormat] = useState<ImportFormat>('GENERIC_CSV')
 	const [mapping, setMapping] = useState<HeaderMapping>({})
 	const [candidates, setCandidates] = useState<ImportBookCandidate[]>([])
 	const [policy, setPolicy] = useState<DuplicatePolicy>('SKIP')
@@ -110,6 +112,7 @@ export default function ImportScreen () {
 			setCsvText(text)
 			setTable(prepared.table)
 			setFormatLabel(prepared.formatLabel)
+			setImportFormat(prepared.format)
 			setMapping(prepared.mapping)
 			if (prepared.needsManualMapping) {
 				setStep('mapping')
@@ -143,6 +146,7 @@ export default function ImportScreen () {
 			})
 			setCandidates(prepared.candidates)
 			setFormatLabel(prepared.formatLabel)
+			setImportFormat(prepared.format)
 			refreshSummary(prepared.candidates)
 			setStep('preview')
 		} catch (error) {
@@ -171,7 +175,9 @@ export default function ImportScreen () {
 		setBusy(true)
 		setBusyLabel(importCopy.importing)
 		try {
-			const result = await runImportCommit(executor, candidates)
+			const result = await runImportCommit(executor, candidates, {
+				format: importFormat,
+			})
 			setReport(result)
 			setStep('report')
 		} catch {

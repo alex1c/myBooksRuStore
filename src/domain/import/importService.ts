@@ -144,6 +144,17 @@ export async function prepareImportFromCsvText (
 	const resolvedFormat =
 		format === 'UNKNOWN' ? 'GENERIC_CSV' : format
 
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const { mapImportFormat } = await import('@/domain/analytics/mappers')
+		track(AnalyticsEvents.importStarted, {
+			format: mapImportFormat(resolvedFormat),
+		})
+	} catch {
+		// ignore
+	}
+
 	return {
 		table,
 		format: resolvedFormat,
@@ -215,6 +226,29 @@ export function setCandidatePolicy (
 export async function runImportCommit (
 	db: SqlExecutor,
 	candidates: ImportBookCandidate[],
+	options: { format?: ImportFormat } = {},
 ): Promise<ImportCommitReport> {
-	return commitImportCandidates(db, candidates)
+	const report = await commitImportCandidates(db, candidates)
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const { importSizeBucket, mapImportFormat } = await import(
+			'@/domain/analytics/mappers'
+		)
+		const formatParam = mapImportFormat(options.format ?? 'GENERIC_CSV')
+		track(AnalyticsEvents.importCompleted, {
+			format: formatParam,
+			size_bucket: importSizeBucket(report.added),
+		})
+		if (report.added > 0) {
+			track(AnalyticsEvents.bookAdded, {
+				source: 'import',
+				format: 'paper',
+				initial_status: 'WANT_TO_READ',
+			})
+		}
+	} catch {
+		// ignore
+	}
+	return report
 }

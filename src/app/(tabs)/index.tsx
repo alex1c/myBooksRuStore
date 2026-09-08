@@ -6,12 +6,14 @@ import { ExactProgressModal } from '@/components/reading/ExactProgressModal'
 import { ReadingNowCard } from '@/components/reading/ReadingNowCard'
 import { UndoSnackbar } from '@/components/reading/UndoSnackbar'
 import { MicroHintBanner } from '@/components/help/MicroHintBanner'
+import { AppBanner } from '@/components/ads/AppBanner'
 import {
 	EmptyState,
 	LoadingState,
 	Screen,
 	SectionHeader,
 } from '@/components/ui'
+import { ADS_BANNER_GROUP_TODAY_LIBRARY } from '@/config/ads'
 import { appCopy, helpCopy, sessionCopy, todayCopy, statsCopy } from '@/constants/copy'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
@@ -424,6 +426,12 @@ export default function TodayScreen () {
 					/>
 				</View>
 			) : null}
+
+			{/* Conservatively hide banner while a reading session is active. */}
+			<AppBanner
+				group={ADS_BANNER_GROUP_TODAY_LIBRARY}
+				visible={!active}
+			/>
 		</Screen>
 	)
 }

@@ -4,9 +4,23 @@ import { Platform } from 'react-native'
 
 import { tabsCopy } from '@/constants/copy'
 import { colors } from '@/constants/theme'
+import { AdContexts, type AdContext } from '@/domain/ads/adContexts'
+import {
+	onSafeTabTransition,
+	recordMeaningfulAdAction,
+} from '@/domain/ads/adsService'
+
+const TAB_CONTEXT: Record<string, AdContext> = {
+	index: AdContexts.HOME,
+	library: AdContexts.LIBRARY,
+	diary: AdContexts.DIARY,
+	stats: AdContexts.STATISTICS,
+	more: AdContexts.MORE,
+}
 
 /**
  * Production-quality bottom tabs for the five primary destinations.
+ * Records meaningful navigation and may attempt interstitial on safe tabs.
  */
 export default function TabsLayout () {
 	return (
@@ -28,6 +42,28 @@ export default function TabsLayout () {
 				},
 				sceneStyle: {
 					backgroundColor: colors.background,
+				},
+			}}
+			screenListeners={{
+				tabPress: (event) => {
+					const routeName = event.target?.split('-')[0] ?? ''
+					const context = TAB_CONTEXT[routeName]
+					if (!context) {
+						return
+					}
+					// Today is never an interstitial target; still counts as an action
+					// when leaving/entering other tabs via onSafeTabTransition whitelist.
+					if (
+						context === AdContexts.LIBRARY
+						|| context === AdContexts.DIARY
+						|| context === AdContexts.STATISTICS
+						|| context === AdContexts.MORE
+					) {
+						onSafeTabTransition(context)
+					} else {
+						// Major tab navigation still counts toward the meaningful-action gate.
+						recordMeaningfulAdAction()
+					}
 				},
 			}}
 		>

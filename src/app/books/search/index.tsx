@@ -95,7 +95,7 @@ export default function BookSearchScreen () {
 	}, [])
 
 	const openPreview = (item: NormalizedBookCandidate) => {
-		setPendingSearchCandidate(item)
+		setPendingSearchCandidate(item, 'search')
 		router.push('/books/search/preview')
 	}
 

@@ -15,6 +15,8 @@ import {
 	createExpoNotificationsAdapter,
 } from '@/domain/reminders/expoNotificationsAdapter'
 import { setNotificationsAdapter } from '@/domain/reminders/notificationsAdapter'
+import { initializeAds } from '@/domain/ads/adsService'
+import { initializeAnalytics } from '@/domain/analytics/analyticsService'
 import { useAppBootstrap } from '@/hooks/useAppBootstrap'
 import { useOnboardingGate } from '@/hooks/useOnboardingGate'
 import { useReadingReminderNotificationRouting } from '@/hooks/useReadingReminderNotificationRouting'
@@ -52,6 +54,15 @@ export default function RootLayout () {
 		if (status === 'ready' || status === 'error') {
 			SplashScreen.hideAsync().catch(() => undefined)
 		}
+	}, [status])
+
+	// Analytics + ads are secondary: start after local DB is ready, never block UI.
+	useEffect(() => {
+		if (status !== 'ready') {
+			return
+		}
+		initializeAnalytics()
+		initializeAds()
 	}, [status])
 
 	if (status === 'loading') {

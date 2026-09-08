@@ -45,7 +45,16 @@ export async function createBackupZipBytes (
 ): Promise<{ bytes: Uint8Array; archive: BackupArchive; fileName: string }> {
 	const archive = await collectBackupArchive(db, coverReader)
 	const bytes = await packBackupZip(archive)
-	return { bytes, archive, fileName: backupFileName() }
+	const fileName = backupFileName()
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const hasCovers = Object.keys(archive.covers).length > 0
+		track(AnalyticsEvents.backupCreated, { has_covers: hasCovers })
+	} catch {
+		// ignore
+	}
+	return { bytes, archive, fileName }
 }
 
 /**
@@ -56,6 +65,37 @@ export async function restoreFromZipBytes (
 	bytes: Uint8Array,
 	coverWriter?: CoverWriter,
 ): Promise<void> {
-	const archive = await unpackBackupZip(bytes)
-	await restoreBackupArchive(db, archive, coverWriter)
+	try {
+		const archive = await unpackBackupZip(bytes)
+		await restoreBackupArchive(db, archive, coverWriter)
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.restoreCompleted)
+		} catch {
+			// ignore
+		}
+	} catch (error) {
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			const message = error instanceof Error ? error.message : ''
+			let reason:
+				| 'invalid_format'
+				| 'checksum'
+				| 'unsupported_version'
+				| 'restore_error' = 'restore_error'
+			if (/checksum|sha/i.test(message)) {
+				reason = 'checksum'
+			} else if (/version|unsupported/i.test(message)) {
+				reason = 'unsupported_version'
+			} else if (/format|zip|json|manifest/i.test(message)) {
+				reason = 'invalid_format'
+			}
+			track(AnalyticsEvents.restoreFailed, { reason })
+		} catch {
+			// ignore
+		}
+		throw error
+	}
 }

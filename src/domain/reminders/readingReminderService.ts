@@ -99,6 +99,13 @@ export async function saveReadingReminders (
 		await setReminderEnabled(db, false)
 		await setReminderTime(db, input.time)
 		await setReminderWeekdays(db, weekdays.length > 0 ? weekdays : [1, 2, 3, 4, 5, 6, 7])
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.reminderDisabled)
+		} catch {
+			// ignore
+		}
 		return { ok: true, scheduledIds: [] }
 	}
 
@@ -153,6 +160,16 @@ export async function saveReadingReminders (
 		await setReminderWeekdays(db, weekdays)
 		await setReminderScheduleIds(db, createdIds)
 		await setReminderEnabled(db, true)
+
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.reminderEnabled, {
+				days_count: weekdays.length,
+			})
+		} catch {
+			// ignore
+		}
 
 		return { ok: true, scheduledIds: createdIds }
 	} catch {

@@ -2,9 +2,8 @@
 
 ## Current phase
 
-**Phase 13 — UX polish** ← DONE  
-**Phase 13b — Onboarding & Help** ← DONE  
-**Phase 14 — AppMetrica + Yandex Ads** ← NEXT
+**Phase 14 — AppMetrica + Yandex Ads** ← DONE  
+**Phase 15 — Final native QA** ← NEXT
 
 ## Phases
 
@@ -24,20 +23,19 @@
 | 12 | Notifications | **DONE** |
 | 13 | UX polish | **DONE** |
 | 13b | Onboarding & Help | **DONE** |
-| 14 | AppMetrica + Ads | Planned |
+| 14 | AppMetrica + Ads | **DONE** |
 | 15 | Native QA | Planned |
 | 16 | RuStore release | Planned |
 
-## Phase 13b scope (DONE)
+## Phase 14 scope (DONE)
 
-- First-launch 4-screen onboarding (skip / next / start) via `onboarding_completed`
-- Permanent «Ещё → Как пользоваться» with 13 help sections
-- One-time micro-hints on Today + active session
-- Contextual links from empty stats and backup
-- No demo library data from onboarding
+- AppMetrica mobile SDK + central `analyticsService` (privacy-safe events)
+- Yandex Mobile Ads + `AppBanner` (3 banner groups) + gated interstitial
+- Docs: `docs/ANALYTICS.md`, `docs/ADS.md`
+- Unit tests for privacy, banner/interstitial policy, navigation safety
 
 ## Explicitly deferred
 
-- AppMetrica / Yandex Ads (Phase 14)
+- Production signing / AAB / RuStore listing (Phase 15–16)
 - Cloud sync / social
 - Forced re-onboarding after updates / What's New

@@ -76,13 +76,27 @@ export async function createGoal (
 	}
 
 	const today = toDateOnlyLocal(now)
-	return createReadingGoal(db, {
+	const goal = await createReadingGoal(db, {
 		type: input.type,
 		period: input.period,
 		targetValue: input.targetValue,
 		startsOn: today,
 		endsOn: null,
 	})
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const { mapGoalPeriod, mapGoalType } = await import(
+			'@/domain/analytics/mappers'
+		)
+		track(AnalyticsEvents.readingGoalCreated, {
+			type: mapGoalType(input.type),
+			period: mapGoalPeriod(input.period),
+		})
+	} catch {
+		// ignore
+	}
+	return goal
 }
 
 export async function editGoal (

@@ -11,6 +11,7 @@ import {
 	formatSeriesValue,
 	SimpleBarChart,
 } from '@/components/stats/SimpleBarChart'
+import { AppBanner } from '@/components/ads/AppBanner'
 import {
 	Card,
 	EmptyState,
@@ -21,6 +22,7 @@ import {
 	SectionHeader,
 } from '@/components/ui'
 import { statsCopy, helpCopy } from '@/constants/copy'
+import { ADS_BANNER_GROUP_DIARY_STATS } from '@/config/ads'
 import { statusFilterLabels } from '@/constants/labels'
 import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
@@ -723,6 +725,9 @@ export default function StatsScreen () {
 					onPress={() => router.push('/goals/form')}
 				/>
 			)}
+
+			{/* Banner after meaningful stats content — not between summary and charts. */}
+			<AppBanner group={ADS_BANNER_GROUP_DIARY_STATS} />
 		</Screen>
 	)
 }

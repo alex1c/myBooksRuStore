@@ -11,6 +11,7 @@ import {
 
 import { ChipScroller } from '@/components/library/ChipScroller'
 import { LibraryBookCard } from '@/components/library/LibraryBookCard'
+import { AppBanner } from '@/components/ads/AppBanner'
 import {
 	EmptyState,
 	LoadingState,
@@ -20,6 +21,7 @@ import {
 	SectionHeader,
 } from '@/components/ui'
 import { libraryCopy } from '@/constants/copy'
+import { ADS_BANNER_GROUP_TODAY_LIBRARY } from '@/config/ads'
 import type { LibrarySort, LibraryStatus } from '@/constants/domain'
 import { LIBRARY_SORTS } from '@/constants/domain'
 import {
@@ -175,6 +177,8 @@ export default function LibraryScreen () {
 					keyboardShouldPersistTaps="handled"
 				/>
 			) : null}
+
+			<AppBanner group={ADS_BANNER_GROUP_TODAY_LIBRARY} />
 
 			<Modal
 				visible={sortOpen}

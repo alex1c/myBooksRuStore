@@ -3,7 +3,7 @@
  */
 
 import { router, Stack } from 'expo-router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
 	Pressable,
 	StyleSheet,
@@ -19,6 +19,11 @@ import { colors, radii, spacing, typography } from '@/constants/theme'
 import { useDatabase } from '@/context/DatabaseContext'
 import { ONBOARDING_SLIDES } from '@/domain/help/onboardingSlides'
 import { finishOnboarding } from '@/domain/help/onboardingService'
+import { track } from '@/domain/analytics/analyticsService'
+import { AnalyticsEvents } from '@/domain/analytics/types'
+
+/** Guard against React Strict Mode double-mount duplicate emission. */
+let onboardingStartedTracked = false
 
 export default function OnboardingScreen () {
 	const { executor } = useDatabase()
@@ -28,13 +33,22 @@ export default function OnboardingScreen () {
 	const slide = ONBOARDING_SLIDES[index]!
 	const isLast = index === ONBOARDING_SLIDES.length - 1
 
-	const complete = async () => {
+	useEffect(() => {
+		if (onboardingStartedTracked) {
+			return
+		}
+		onboardingStartedTracked = true
+		track(AnalyticsEvents.onboardingStarted)
+	}, [])
+
+	const complete = async (method: 'completed' | 'skipped') => {
 		if (busy) {
 			return
 		}
 		setBusy(true)
 		try {
 			await finishOnboarding(executor)
+			track(AnalyticsEvents.onboardingCompleted, { method })
 			router.replace('/(tabs)')
 		} finally {
 			setBusy(false)
@@ -63,7 +77,7 @@ export default function OnboardingScreen () {
 							accessibilityRole="button"
 							accessibilityLabel={onboardingCopy.skip}
 							onPress={() => {
-								void complete()
+								void complete('skipped')
 							}}
 							hitSlop={8}
 							disabled={busy}
@@ -108,7 +122,7 @@ export default function OnboardingScreen () {
 						loading={busy}
 						onPress={() => {
 							if (isLast) {
-								void complete()
+								void complete('completed')
 								return
 							}
 							setIndex((v) =>

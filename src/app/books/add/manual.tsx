@@ -83,6 +83,18 @@ export default function ManualAddBookScreen () {
 			shelfIds: data.shelfIds,
 			forceAdd,
 		})
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			const { mapBookFormat } = await import('@/domain/analytics/mappers')
+			track(AnalyticsEvents.bookAdded, {
+				source: 'manual',
+				format: mapBookFormat(created.entry.format),
+				initial_status: created.entry.status,
+			})
+		} catch {
+			// ignore
+		}
 		router.replace(`/books/${created.entry.id}`)
 	}
 

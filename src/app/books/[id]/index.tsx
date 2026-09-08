@@ -112,6 +112,9 @@ export default function BookDetailsScreen () {
 	useFocusEffect(
 		useCallback(() => {
 			void load()
+			void import('@/domain/ads/adsService').then(({ recordMeaningfulAdAction }) => {
+				recordMeaningfulAdAction()
+			})
 		}, [load]),
 	)
 

@@ -488,11 +488,12 @@ export async function updateLibraryBook (
 	db: SqlExecutor,
 	input: UpdateLibraryBookInput,
 ): Promise<LibraryBookItem> {
-	return runInTransaction(db, async () => {
-		const existing = await getLibraryEntryById(db, input.entryId)
-		if (!existing) {
-			throw new Error('LIBRARY_ENTRY_NOT_FOUND')
-		}
+	const existing = await getLibraryEntryById(db, input.entryId)
+	if (!existing) {
+		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
+	}
+	const previousStatus = existing.status
+	const result = await runInTransaction(db, async () => {
 		if (input.book) {
 			await updateBook(db, existing.bookId, input.book)
 		}
@@ -509,6 +510,19 @@ export async function updateLibraryBook (
 		const shelfIds = await listShelfIdsForEntry(db, entry.id)
 		return { book, entry, shelfIds }
 	})
+	if (input.entry?.status && input.entry.status !== previousStatus) {
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.bookStatusChanged, {
+				from: previousStatus,
+				to: input.entry.status,
+			})
+		} catch {
+			// ignore
+		}
+	}
+	return result
 }
 
 export async function archiveLibraryBook (

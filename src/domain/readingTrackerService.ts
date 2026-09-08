@@ -244,6 +244,7 @@ export async function startReadingSession (
 	}
 
 	const started = startedAt ?? nowIso()
+	const previousStatus = item.entry.status
 
 	const session = await runInTransaction(db, async () => {
 		if (item.entry.status === 'WANT_TO_READ' || item.entry.status === 'PAUSED') {
@@ -276,6 +277,24 @@ export async function startReadingSession (
 		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
 	}
 
+	// Best-effort analytics after successful start (never blocks the session).
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const { mapProgressMode } = await import('@/domain/analytics/mappers')
+		track(AnalyticsEvents.readingSessionStarted, {
+			progress_mode: mapProgressMode(refreshed.entry.progressMode),
+		})
+		if (previousStatus !== 'READING' && refreshed.entry.status === 'READING') {
+			track(AnalyticsEvents.bookStatusChanged, {
+				from: previousStatus,
+				to: 'READING',
+			})
+		}
+	} catch {
+		// Analytics must never affect reading.
+	}
+
 	return {
 		session,
 		item: refreshed,
@@ -303,6 +322,13 @@ export async function finishReadingSession (
 		const item = await getLibraryBookByEntryId(db, session.libraryEntryId)
 		if (!item) {
 			throw new Error('LIBRARY_ENTRY_NOT_FOUND')
+		}
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.readingSessionCancelled)
+		} catch {
+			// ignore
 		}
 		return {
 			session: { ...session, endedAt: null, durationSeconds: null },
@@ -397,6 +423,21 @@ export async function finishReadingSession (
 		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
 	}
 
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const {
+			durationBucket,
+			mapProgressMode,
+		} = await import('@/domain/analytics/mappers')
+		track(AnalyticsEvents.readingSessionFinished, {
+			progress_mode: mapProgressMode(finished.previous.progressMode),
+			duration_bucket: durationBucket(durationSeconds),
+		})
+	} catch {
+		// ignore
+	}
+
 	return {
 		session: finished.updatedSession,
 		item,
@@ -421,6 +462,13 @@ export async function cancelReadingSession (
 	const item = await getLibraryBookByEntryId(db, session.libraryEntryId)
 	if (!item) {
 		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
+	}
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		track(AnalyticsEvents.readingSessionCancelled)
+	} catch {
+		// ignore
 	}
 	return item
 }
@@ -577,6 +625,20 @@ export async function applyQuickProgress (
 		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
 	}
 
+	// One event per successful quick/exact update — never per repeated +1 spam beyond this call.
+	if (type === 'QUICK_UPDATE') {
+		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			const { mapProgressMode } = await import('@/domain/analytics/mappers')
+			track(AnalyticsEvents.quickProgressUsed, {
+				mode: mapProgressMode(previous.progressMode),
+			})
+		} catch {
+			// ignore
+		}
+	}
+
 	return {
 		entry: result.entry,
 		item,
@@ -668,7 +730,8 @@ export async function markBookFinished (
 		})
 		: {}
 
-	return runInTransaction(db, async () => {
+	const fromStatus = item.entry.status
+	const bookItem = await runInTransaction(db, async () => {
 		const entry = await updateLibraryEntry(db, libraryEntryId, {
 			status: 'FINISHED',
 			finishedAt: nowIso(),
@@ -686,12 +749,25 @@ export async function markBookFinished (
 			previousAudioSeconds: item.entry.audioPositionSeconds,
 			newAudioSeconds: entry.audioPositionSeconds,
 		})
-		const bookItem = await getLibraryBookByEntryId(db, libraryEntryId)
-		if (!bookItem) {
+		const next = await getLibraryBookByEntryId(db, libraryEntryId)
+		if (!next) {
 			throw new Error('LIBRARY_ENTRY_NOT_FOUND')
 		}
-		return bookItem
+		return next
 	})
+
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		track(AnalyticsEvents.bookStatusChanged, {
+			from: fromStatus,
+			to: 'FINISHED',
+		})
+	} catch {
+		// ignore
+	}
+
+	return bookItem
 }
 
 /** PAUSED / ABANDONED → READING without destroying session history. */

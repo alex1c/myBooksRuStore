@@ -117,6 +117,7 @@ export default function YearInBooksScreen () {
 	const [sharing, setSharing] = useState(false)
 	const shareCardRef = useRef<View>(null)
 	const listRef = useRef<FlatList<Slide>>(null)
+	const openedTracked = useRef(false)
 
 	const load = useCallback(async () => {
 		setLoading(true)
@@ -129,6 +130,12 @@ export default function YearInBooksScreen () {
 			setModel(data)
 			setIndex(0)
 			listRef.current?.scrollToOffset({ offset: 0, animated: false })
+			if (!openedTracked.current) {
+				openedTracked.current = true
+				const { track } = await import('@/domain/analytics/analyticsService')
+				const { AnalyticsEvents } = await import('@/domain/analytics/types')
+				track(AnalyticsEvents.yearInBooksOpened)
+			}
 		} finally {
 			setLoading(false)
 		}
@@ -160,6 +167,7 @@ export default function YearInBooksScreen () {
 			return
 		}
 		setSharing(true)
+		let shareType: 'image' | 'text_fallback' = 'text_fallback'
 		try {
 			const canShareFile = await Sharing.isAvailableAsync()
 			if (canShareFile && shareCardRef.current) {
@@ -173,12 +181,24 @@ export default function YearInBooksScreen () {
 					mimeType: 'image/png',
 					dialogTitle: shareModel.title,
 				})
+				shareType = 'image'
+				const { track } = await import('@/domain/analytics/analyticsService')
+				const { AnalyticsEvents } = await import('@/domain/analytics/types')
+				track(AnalyticsEvents.yearInBooksShared, { share_type: shareType })
 				return
 			}
 			await Share.share({ message: shareModel.textFallback })
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.yearInBooksShared, { share_type: shareType })
 		} catch {
 			try {
 				await Share.share({ message: shareModel.textFallback })
+				const { track } = await import('@/domain/analytics/analyticsService')
+				const { AnalyticsEvents } = await import('@/domain/analytics/types')
+				track(AnalyticsEvents.yearInBooksShared, {
+					share_type: 'text_fallback',
+				})
 			} catch {
 				// User cancelled or share unavailable — ignore.
 			}

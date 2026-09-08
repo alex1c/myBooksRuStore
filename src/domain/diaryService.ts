@@ -232,6 +232,16 @@ export async function createNote (
 	if (!item) {
 		throw new Error('LIBRARY_ENTRY_NOT_FOUND')
 	}
+	try {
+		const { track } = await import('@/domain/analytics/analyticsService')
+		const { AnalyticsEvents } = await import('@/domain/analytics/types')
+		const { mapNoteType } = await import('@/domain/analytics/mappers')
+		track(AnalyticsEvents.readingNoteAdded, {
+			type: mapNoteType(input.type),
+		})
+	} catch {
+		// ignore
+	}
 	return { note, item }
 }
 

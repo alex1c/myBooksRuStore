@@ -124,6 +124,21 @@ export default function SearchPreviewScreen () {
 		try {
 			setSaving(true)
 			const created = await addExternalBookToLibrary(executor, draft)
+			try {
+				const { track } = await import('@/domain/analytics/analyticsService')
+				const { AnalyticsEvents } = await import('@/domain/analytics/types')
+				const { mapBookFormat } = await import('@/domain/analytics/mappers')
+				const { getPendingBookAddSource } = await import(
+					'@/services/bookSearch/pendingCandidate'
+				)
+				track(AnalyticsEvents.bookAdded, {
+					source: getPendingBookAddSource(),
+					format: mapBookFormat(created.entry.format),
+					initial_status: created.entry.status,
+				})
+			} catch {
+				// ignore
+			}
 			router.replace(`/books/${created.entry.id}`)
 		} catch (error) {
 			Alert.alert(

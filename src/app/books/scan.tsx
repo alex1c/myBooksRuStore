@@ -66,7 +66,7 @@ export default function IsbnScanScreen () {
 					])
 					return
 				}
-				setPendingSearchCandidate(book)
+				setPendingSearchCandidate(book, 'isbn')
 				router.replace('/books/search/preview')
 			} catch {
 				Alert.alert(searchCopy.networkErrorTitle, searchCopy.networkErrorHint, [

@@ -76,6 +76,10 @@ export default function OcrScanScreen () {
 		setBusyLabel(ocrCopy.downloadingModel)
 		let captureUri: string | null = null
 		try {
+			const { track } = await import('@/domain/analytics/analyticsService')
+			const { AnalyticsEvents } = await import('@/domain/analytics/types')
+			track(AnalyticsEvents.ocrStarted)
+
 			const photo = await cameraRef.current.takePictureAsync({
 				quality: 0.7,
 				skipProcessing: false,
@@ -99,8 +103,28 @@ export default function OcrScanScreen () {
 			updatePendingOcrDraft({
 				confirmedText: result.fullText,
 			})
+			track(AnalyticsEvents.ocrCompleted, {
+				result: result.fullText.trim() ? 'success' : 'empty',
+			})
 			router.replace('/ocr/review')
 		} catch (error) {
+			try {
+				const { track } = await import('@/domain/analytics/analyticsService')
+				const { AnalyticsEvents } = await import('@/domain/analytics/types')
+				const empty =
+					error instanceof OcrError && error.kind === 'EMPTY'
+				const modelDownload =
+					error instanceof OcrError && error.kind === 'MODEL_DOWNLOAD'
+				track(AnalyticsEvents.ocrCompleted, {
+					result: modelDownload
+						? 'model_download_failed'
+						: empty
+							? 'empty'
+							: 'failed',
+				})
+			} catch {
+				// ignore
+			}
 			const empty =
 				error instanceof OcrError && error.kind === 'EMPTY'
 			const modelDownload =
